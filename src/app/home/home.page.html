@@ -1,20 +1,64 @@
-<ion-header [translucent]="true">
+<ion-header>
   <ion-toolbar>
-    <ion-title>
-      Blank
-    </ion-title>
+    <ion-title>WiFi Fingerprinting</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Blank</ion-title>
-    </ion-toolbar>
-  </ion-header>
+<ion-content class="ion-padding">
+  <ion-item>
+    <ion-label position="floating">Room Name</ion-label>
+    <ion-input [(ngModel)]="roomName"></ion-input>
+  </ion-item>
 
-  <div id="container">
-    <strong>Ready to create an app?</strong>
-    <p>Start with Ionic <a target="_blank" rel="noopener noreferrer" href="https://ionicframework.com/docs/components">UI Components</a></p>
-  </div>
+  <ion-item>
+    <ion-label position="floating">X Coordinate</ion-label>
+    <ion-input type="number" [(ngModel)]="x"></ion-input>
+  </ion-item>
+
+  <ion-item>
+    <ion-label position="floating">Y Coordinate</ion-label>
+    <ion-input type="number" [(ngModel)]="y"></ion-input>
+  </ion-item>
+
+  <ion-button expand="block" (click)="startScanning()" [disabled]="isScanning">
+    {{ isScanning ? 'Scanning...' : 'Start Scanning at This Point' }}
+  </ion-button>
+
+  <!-- <ion-button expand="block" color="success" (click)="downloadJSON()" [disabled]="isScanning">
+    Download Dataset
+  </ion-button> -->
+  <ion-button
+    expand="block"
+    color="success"
+    (click)="saveJsonToFileDownloads()"
+    [disabled]="isScanning"
+  >
+    Save Dataset to Downloads Folder
+  </ion-button>
+
+  <!-- Live scan progress -->
+  <!-- <ion-list *ngIf="scanResultsList.length > 0">
+      <ion-item *ngFor="let scan of scanResultsList; let i = index">
+        <ion-label>
+          <h2>Scan {{i + 1}}/{{totalScans}}</h2>
+          <p>Found {{scan.wifi.length}} networks</p>
+        </ion-label>
+      </ion-item>
+    </ion-list> -->
+  <ion-progress-bar
+    *ngIf="isScanning"
+    [value]="scanCount / totalScans"
+    color="primary"
+    buffer="1.0"
+  ></ion-progress-bar>
+
+  <ion-item *ngFor="let scan of scanResultsList; let i = index">
+    <ion-label>
+      <h2>Scan {{i + 1}}/{{totalScans}}</h2>
+      <p>Found {{scan.wifi.length}} networks</p>
+      <div *ngFor="let net of scan.wifi">
+        <small>{{net.ssid}} ({{net.rssi}} dBm)</small><br />
+      </div>
+    </ion-label>
+  </ion-item>
 </ion-content>
