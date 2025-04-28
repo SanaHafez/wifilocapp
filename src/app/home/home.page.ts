@@ -96,10 +96,11 @@ export class HomePage implements OnInit {
         const networks = await WifiWizard2.scan();
         console.log(`Scan ${this.scanCount + 1} completed`, networks);
 
-        const wifiList = networks.map((net: { SSID: any; BSSID: any; level: any; }) => ({
+        const wifiList = networks.map((net: { SSID: any; BSSID: any; level: any; frequency:any}) => ({
           ssid: net.SSID,
           bssid: net.BSSID,
-          rssi: net.level
+          rssi: net.level,
+          frequency: net.frequency
         }));
 
         const entry = {
