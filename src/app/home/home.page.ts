@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Platform , AlertController } from '@ionic/angular';
 import { File } from '@awesome-cordova-plugins/file/ngx';
 import { Insomnia } from '@awesome-cordova-plugins/insomnia/ngx';
-// import { AndroidPermissions } from '@ionic-native/android-permissions/ngx';
+import { AndroidPermissions } from '@ionic-native/android-permissions/ngx';
 declare var WifiWizard2: any;
 
 @Component({
@@ -14,7 +14,7 @@ declare var WifiWizard2: any;
 
 export class HomePage implements OnInit {
   isDeviceReady = false;
-  roomName: string = '';
+  roomName: string = 'U';
   x: number = 1;
   y: number = 1;
   f: number = 1;
@@ -30,21 +30,22 @@ export class HomePage implements OnInit {
   constructor(private platform: Platform,
     private alertCtrl: AlertController,
     private file: File,
-    private insomnia: Insomnia    
+    private insomnia: Insomnia,
+    private androidPermissions:AndroidPermissions
   ) {}
 
   ngOnInit() {
     this.platform.ready().then(() => {
       console.log('Platform ready');
       this.isDeviceReady = true;
-      // this.androidPermissions.checkPermission(this.androidPermissions.PERMISSION.ACCESS_FINE_LOCATION).then(
-      //   result => {
-      //     if (!result.hasPermission) {
-      //       this.androidPermissions.requestPermission(this.androidPermissions.PERMISSION.ACCESS_FINE_LOCATION);
-      //     }
-      //   },
-      //   err => this.androidPermissions.requestPermission(this.androidPermissions.PERMISSION.ACCESS_FINE_LOCATION)
-      // );
+      this.androidPermissions.checkPermission(this.androidPermissions.PERMISSION.ACCESS_FINE_LOCATION).then(
+        result => {
+          if (!result.hasPermission) {
+            this.androidPermissions.requestPermission(this.androidPermissions.PERMISSION.ACCESS_FINE_LOCATION);
+          }
+        },
+        err => this.androidPermissions.requestPermission(this.androidPermissions.PERMISSION.ACCESS_FINE_LOCATION)
+      );
       
       WifiWizard2.startScan();
       

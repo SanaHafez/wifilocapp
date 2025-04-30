@@ -25,6 +25,8 @@
     "@awesome-cordova-plugins/file": "^6.16.0",
     "@awesome-cordova-plugins/insomnia": "^6.16.0",
     "@awesome-cordova-plugins/wifi-wizard-2": "^6.16.0",
+    "@ionic-native/android-permissions": "^5.36.0",
+    "@ionic-native/core": "^5.36.0",
     "@ionic/angular": "^8.0.0",
     "@ionic/cordova-builders": "^12.2.0",
     "cordova-plugin-android-permissions": "^1.1.5",
@@ -84,7 +86,8 @@
       "cordova-plugin-file": {
         "ANDROIDX_WEBKIT_VERSION": "1.4.0"
       },
-      "cordova-plugin-insomnia": {}
+      "cordova-plugin-insomnia": {},
+      "cordova-plugin-android-permissions": {}
     },
     "platforms": [
       "android"
