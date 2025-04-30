@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Platform , AlertController } from '@ionic/angular';
 import { File } from '@awesome-cordova-plugins/file/ngx';
+import { Insomnia } from '@awesome-cordova-plugins/insomnia/ngx';
 // import { AndroidPermissions } from '@ionic-native/android-permissions/ngx';
 declare var WifiWizard2: any;
 
@@ -17,17 +18,18 @@ export class HomePage implements OnInit {
   x: number = 1;
   y: number = 1;
   scanCount: number = 0;
-  totalScans: number = 4;
+  totalScans: number = 30;
   isScanning: boolean = false;
   scanResultsList: any[] = [];
-  scanDelay: number = 20000
+  scanDelay: number = 10000
 
   collectedData: any[] = [];
 
 
   constructor(private platform: Platform,
     private alertCtrl: AlertController,
-    private file: File
+    private file: File,
+    private insomnia: Insomnia    
   ) {}
 
   ngOnInit() {
@@ -74,6 +76,12 @@ export class HomePage implements OnInit {
     if (!this.roomName || isNaN(this.x) || isNaN(this.y)) {
       alert('Please enter Room Name, X and Y coordinates first.');
       return;
+    }
+
+    try {
+      await this.insomnia.keepAwake();
+    } catch (err) {
+      console.warn('Insomnia plugin failed:', err);
     }
 
     if (typeof WifiWizard2 === 'undefined') {
@@ -128,10 +136,22 @@ export class HomePage implements OnInit {
         console.error('Scan error:', error);
         break;
       }
+      try {
+        await this.insomnia.keepAwake();
+      } catch (err) {
+        console.warn('Insomnia plugin failed:', err);
+      }
+  
     }
 
     this.isScanning = false;
     alert('Scans completed for this location!');
+    
+    try {
+      await this.insomnia.allowSleepAgain();
+    } catch (err) {
+      console.warn('Insomnia plugin failed:', err);
+    }
   }
 
   delay(ms: number) {
