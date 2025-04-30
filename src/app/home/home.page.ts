@@ -17,6 +17,7 @@ export class HomePage implements OnInit {
   roomName: string = '';
   x: number = 1;
   y: number = 1;
+  f: number = 1;
   scanCount: number = 0;
   totalScans: number = 30;
   isScanning: boolean = false;
@@ -104,7 +105,9 @@ export class HomePage implements OnInit {
         const networks = await WifiWizard2.scan();
         console.log(`Scan ${this.scanCount + 1} completed`, networks);
 
-        const wifiList = networks.map((net: { SSID: any; BSSID: any; level: any; frequency:any}) => ({
+        const wifiList = networks
+        .filter((net: any) => net.SSID != null && net.SSID.trim() !== '')
+        .map((net: { SSID: any; BSSID: any; level: any; frequency:any}) => ({
           ssid: net.SSID,
           bssid: net.BSSID,
           rssi: net.level,
@@ -115,6 +118,7 @@ export class HomePage implements OnInit {
           room: this.roomName,
           x: this.x,
           y: this.y,
+          f: this.f,
           scanNumber: this.scanCount + 1,
           timestamp: new Date().toISOString(), // Add timestamp
           wifi: wifiList
