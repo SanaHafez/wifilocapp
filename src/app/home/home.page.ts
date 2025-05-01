@@ -19,10 +19,10 @@ export class HomePage implements OnInit {
   y: number = 1;
   f: number = 1;
   scanCount: number = 0;
-  totalScans: number = 30;
+  totalScans: number = 3;
   isScanning: boolean = false;
   scanResultsList: any[] = [];
-  scanDelay: number = 10000
+  scanDelay: number = 1000
 
   collectedData: any[] = [];
 
@@ -45,6 +45,24 @@ export class HomePage implements OnInit {
           }
         },
         err => this.androidPermissions.requestPermission(this.androidPermissions.PERMISSION.ACCESS_FINE_LOCATION)
+      );
+      this.androidPermissions.checkPermission(this.androidPermissions.PERMISSION.READ_EXTERNAL_STORAGE).then(
+        result => {
+          if (!result.hasPermission) {
+            this.androidPermissions.requestPermission(this.androidPermissions.PERMISSION.READ_EXTERNAL_STORAGE);
+          }
+        },
+        err => this.androidPermissions.requestPermission(this.androidPermissions.PERMISSION.READ_EXTERNAL_STORAGE)
+      );
+      
+      // WRITE_EXTERNAL_STORAGE
+      this.androidPermissions.checkPermission(this.androidPermissions.PERMISSION.WRITE_EXTERNAL_STORAGE).then(
+        result => {
+          if (!result.hasPermission) {
+            this.androidPermissions.requestPermission(this.androidPermissions.PERMISSION.WRITE_EXTERNAL_STORAGE);
+          }
+        },
+        err => this.androidPermissions.requestPermission(this.androidPermissions.PERMISSION.WRITE_EXTERNAL_STORAGE)
       );
       
       WifiWizard2.startScan();
@@ -119,7 +137,7 @@ export class HomePage implements OnInit {
           room: this.roomName,
           x: this.x,
           y: this.y,
-          f: this.f,
+          floor: this.f,
           scanNumber: this.scanCount + 1,
           timestamp: new Date().toISOString(), // Add timestamp
           wifi: wifiList
@@ -187,6 +205,45 @@ export class HomePage implements OnInit {
         alert('Failed to save file.');
       });}
 
+  // async saveJsonToFileDownloads() {
+  //   const fileName = 'wifi_dataset.json';
+  //   const path     = this.file.externalRootDirectory + 'Download/'; 
+  //   const newData  = this.collectedData;
+
+  //   try {
+  //     const exists = await this.file.checkFile(path, fileName);
+
+  //     if (exists) {
+  //       // Read old content
+  //       const oldContent = await this.file.readAsText(path, fileName);
+  //       let oldData: any[];
+
+  //       // Guard against null or malformed JSON
+  //       try {
+  //         oldData = JSON.parse(oldContent) || [];
+  //       } catch {
+  //         console.warn('Existing JSON invalid—starting fresh array');
+  //         oldData = [];
+  //       }
+
+  //       // Merge and save
+  //       const mergedData = oldData.concat(newData);
+  //       await this.file.writeFile(path, fileName, JSON.stringify(mergedData, null, 2), { replace: true });
+
+  //       console.log('New data appended to existing JSON file!');
+  //       alert('New data appended to dataset!');
+  //     } else {
+  //       // File not found: create it
+  //       await this.file.writeFile(path, fileName, JSON.stringify(newData, null, 2), { replace: true });
+  //       console.log('New file created and data saved!');
+  //       alert('Dataset file created!');
+  //     }
+
+  //   } catch (error: any) {
+  //     console.error('Error saving file:', error);
+  //     alert('Failed to save file: ' + (error.message || error));
+  //   }
+  // }
   async saveJsonToFileDownloads() {
     // const fileName = 'wifi_dataset.json';
     // const data = JSON.stringify(this.collectedData, null, 2);
@@ -200,6 +257,11 @@ export class HomePage implements OnInit {
     //     console.error('Error saving file:', err);
     //     alert('Failed to save file.');
     //   });  }
+    const P = this.androidPermissions.PERMISSION;
+    await this.androidPermissions.requestPermissions([
+      P.READ_EXTERNAL_STORAGE,
+      P.WRITE_EXTERNAL_STORAGE
+    ]);
     const fileName = 'wifi_dataset.json';
     const path = this.file.externalRootDirectory + 'Download/'; // Saving in Downloads folder
     const newData = this.collectedData;

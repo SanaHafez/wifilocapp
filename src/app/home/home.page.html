@@ -25,6 +25,16 @@
     <ion-input type="number" [(ngModel)]="y"></ion-input>
   </ion-item>
 
+  <ion-item>
+    <ion-label position="floating">Total Scans</ion-label>
+    <ion-input type="number" [(ngModel)]="totalScans"></ion-input>
+  </ion-item>
+
+  <ion-item>
+    <ion-label position="floating">Scan Delay</ion-label>
+    <ion-input type="number" [(ngModel)]="scanDelay"></ion-input>
+  </ion-item>
+
   <ion-button expand="block" (click)="startScanning()" [disabled]="isScanning">
     {{ isScanning ? 'Scanning...' : 'Start Scanning at This Point' }}
   </ion-button>
@@ -32,12 +42,7 @@
   <!-- <ion-button expand="block" color="success" (click)="downloadJSON()" [disabled]="isScanning">
     Download Dataset
   </ion-button> -->
-  <ion-button
-    expand="block"
-    color="success"
-    (click)="saveJsonToFileDownloads()"
-    [disabled]="isScanning"
-  >
+  <ion-button expand="block" color="success" (click)="saveJsonToFileDownloads()" [disabled]="isScanning">
     Save Dataset to Downloads Folder
   </ion-button>
 
@@ -50,20 +55,16 @@
         </ion-label>
       </ion-item>
     </ion-list> -->
-  <ion-progress-bar
-    *ngIf="isScanning"
-    [value]="scanCount / totalScans"
-    color="primary"
-    buffer="1.0"
-  ></ion-progress-bar>
+  <ion-progress-bar *ngIf="isScanning" [value]="scanCount / totalScans" color="primary" buffer="1.0" >
+  </ion-progress-bar>
 
   <ion-item *ngFor="let scan of scanResultsList; let i = index">
     <ion-label>
       <h2>Scan {{i + 1}}/{{totalScans}}</h2>
       <p>Found {{scan.wifi.length}} networks</p>
-      <div *ngFor="let net of scan.wifi">
+      <!-- <div *ngFor="let net of scan.wifi">
         <small>{{net.ssid}} ({{net.rssi}} dBm)</small><br />
-      </div>
+      </div> -->
     </ion-label>
   </ion-item>
 </ion-content>
