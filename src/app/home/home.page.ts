@@ -14,15 +14,16 @@ declare var WifiWizard2: any;
 
 export class HomePage implements OnInit {
   isDeviceReady = false;
-  roomName: string = 'U';
+  roomName: string = 'U-1F-';
   x: number = 1;
   y: number = 1;
   f: number = 1;
   scanCount: number = 0;
-  totalScans: number = 3;
+  totalScans: number = 50;
   isScanning: boolean = false;
   scanResultsList: any[] = [];
-  scanDelay: number = 1000
+  scanDelay: number = 2000
+  shouldStop:boolean = false;
 
   collectedData: any[] = [];
 
@@ -70,6 +71,7 @@ export class HomePage implements OnInit {
     });
   }
   async scan() {
+    this.shouldStop = false;
     if (!this.isDeviceReady) {
       console.log('Device not ready or running in browser');
       return;
@@ -92,11 +94,17 @@ export class HomePage implements OnInit {
     }
   }
 
+  stopScanning() {
+    // signal the loop to break
+    this.shouldStop = true;
+  }
+
   async startScanning() {
     if (!this.roomName || isNaN(this.x) || isNaN(this.y)) {
       alert('Please enter Room Name, X and Y coordinates first.');
       return;
     }
+    this.shouldStop = false;
 
     try {
       await this.insomnia.keepAwake();
@@ -113,13 +121,13 @@ export class HomePage implements OnInit {
     this.isScanning = true;
 
     this.collectedData = []; // Clear previous data this is added later...
-    // this.scanResultsList = [];
+    this.scanResultsList = [];
     await this.scanLoop();
   }
 
   async scanLoop() {
-    this.scanResultsList = [];
-    while (this.scanCount < this.totalScans) {
+    // this.scanResultsList = [];
+    while ( !this.shouldStop && this.scanCount < this.totalScans) {
       try {
         const networks = await WifiWizard2.scan();
         console.log(`Scan ${this.scanCount + 1} completed`, networks);
@@ -150,7 +158,7 @@ export class HomePage implements OnInit {
 
         // Wait 20 seconds between scans (recommended so WiFi has time to refresh)
         // await this.delay(30000);
-        if (this.scanCount < this.totalScans) {
+        if (this.scanCount < this.totalScans && !this.shouldStop) {
           // Only delay if more scans remain
           await this.delay(this.scanDelay);
         }
@@ -168,13 +176,17 @@ export class HomePage implements OnInit {
     }
 
     this.isScanning = false;
-    alert('Scans completed for this location!');
+    // alert('Scans completed for this location!');
     
     try {
       await this.insomnia.allowSleepAgain();
     } catch (err) {
       console.warn('Insomnia plugin failed:', err);
     }
+    alert(this.shouldStop 
+      ? 'Scanning stopped.' 
+      : 'All scans completed!');
+  
   }
 
   delay(ms: number) {

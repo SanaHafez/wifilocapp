@@ -5,7 +5,7 @@
 </ion-header>
 
 <ion-content class="ion-padding">
-  <ion-item>
+  <!-- <ion-item>
     <ion-label position="floating">Room Name</ion-label>
     <ion-input [(ngModel)]="roomName"></ion-input>
   </ion-item>
@@ -13,9 +13,9 @@
   <ion-item>
     <ion-label position="floating">Floor</ion-label>
     <ion-input type="number" [(ngModel)]="f"></ion-input>
-  </ion-item>
+  </ion-item> -->
 
-  <ion-item>
+  <!-- <ion-item>
     <ion-label position="floating">X Coordinate</ion-label>
     <ion-input type="number" [(ngModel)]="x"></ion-input>
   </ion-item>
@@ -23,28 +23,105 @@
   <ion-item>
     <ion-label position="floating">Y Coordinate</ion-label>
     <ion-input type="number" [(ngModel)]="y"></ion-input>
-  </ion-item>
+  </ion-item> -->
+  <ion-grid>
+    <ion-row>
+      <ion-col size="6">
+        <ion-item>
+          <ion-label position="stacked">Room Name</ion-label>
+          <ion-input [(ngModel)]="roomName"></ion-input>
+        </ion-item>
+      </ion-col>
+      <ion-col size="6">
+        <ion-item>
+          <ion-label position="stacked">Floor</ion-label>
+          <ion-input type="number" [(ngModel)]="f"></ion-input>
+        </ion-item>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
 
-  <ion-item>
+  <ion-grid>
+    <ion-row>
+      <ion-col size="6">
+        <ion-item>
+          <ion-label position="stacked">X Coordinate (m)</ion-label>
+          <ion-input type="number" [(ngModel)]="x"></ion-input>
+        </ion-item>
+      </ion-col>
+      <ion-col size="6">
+        <ion-item>
+          <ion-label position="stacked">Y Coordinate (m)</ion-label>
+          <ion-input type="number" [(ngModel)]="y"></ion-input>
+        </ion-item>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+
+  <!-- <ion-item>
     <ion-label position="floating">Total Scans</ion-label>
     <ion-input type="number" [(ngModel)]="totalScans"></ion-input>
-  </ion-item>
+  </ion-item> -->
 
+
+  <ion-grid>
+    <ion-row>
+      <ion-col size="6">
+        <ion-item>
+          <ion-label position="stacked">Total Scans</ion-label>
+          <ion-input type="number" [(ngModel)]="totalScans"></ion-input>
+        </ion-item>
+      </ion-col>
+      <ion-col size="6">
+        <ion-item>
+          <ion-label position="stacked">Scan Delay (ms)</ion-label>
+          <ion-input type="number" [(ngModel)]="scanDelay"></ion-input>
+        </ion-item>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+
+  <ion-grid>
+    <ion-row>
+      <ion-col size="6">
+        <!-- Show “Stop” if we’re scanning, otherwise “Start” -->
+        <ion-button 
+          expand="block" 
+          [color]="isScanning ? 'danger' : 'primary'"
+          (click)="isScanning ? stopScanning() : startScanning()">
+          {{ isScanning ? 'Stop Scanning' : (isScanning === false ? 'Start Scanning' : '...') }}
+        </ion-button>
+      </ion-col>
+      <ion-col size="6">
+        <ion-button 
+          expand="block" 
+          color="success" 
+          (click)="saveJsonToFileDownloads()" 
+          [disabled]="isScanning">
+          Save Scan Results 
+        </ion-button>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+  
+  
+  
+<!-- 
   <ion-item>
     <ion-label position="floating">Scan Delay</ion-label>
     <ion-input type="number" [(ngModel)]="scanDelay"></ion-input>
-  </ion-item>
+  </ion-item> -->
 
-  <ion-button expand="block" (click)="startScanning()" [disabled]="isScanning">
+  <!-- <ion-button expand="block" (click)="startScanning()" [disabled]="isScanning">
     {{ isScanning ? 'Scanning...' : 'Start Scanning at This Point' }}
   </ion-button>
-
-  <!-- <ion-button expand="block" color="success" (click)="downloadJSON()" [disabled]="isScanning">
-    Download Dataset
-  </ion-button> -->
   <ion-button expand="block" color="success" (click)="saveJsonToFileDownloads()" [disabled]="isScanning">
     Save Dataset to Downloads Folder
-  </ion-button>
+  </ion-button> -->
+
+    <!-- <ion-button expand="block" color="success" (click)="downloadJSON()" [disabled]="isScanning">
+    Download Dataset
+  </ion-button> -->
 
   <!-- Live scan progress -->
   <!-- <ion-list *ngIf="scanResultsList.length > 0">
@@ -55,8 +132,12 @@
         </ion-label>
       </ion-item>
     </ion-list> -->
-  <ion-progress-bar *ngIf="isScanning" [value]="scanCount / totalScans" color="primary" buffer="1.0" >
+  <ion-item><ion-progress-bar *ngIf="isScanning" [value]="scanCount / totalScans" color="primary" buffer="1.0" >
   </ion-progress-bar>
+  <ion-note slot="end">
+    {{ scanCount }}/{{ totalScans }}
+  </ion-note>
+</ion-item>
 
   <ion-item *ngFor="let scan of scanResultsList; let i = index">
     <ion-label>
