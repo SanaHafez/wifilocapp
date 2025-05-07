@@ -25,7 +25,7 @@ export class HomePage implements OnInit {
   scanDelay: number = 2000
   shouldStop:boolean = false;
 
-  collectedData: any[] = [];
+  // collectedData: any[] = [];
 
 
   constructor(private platform: Platform,
@@ -97,6 +97,8 @@ export class HomePage implements OnInit {
   stopScanning() {
     // signal the loop to break
     this.shouldStop = true;
+    // this.collectedData=[];
+    this.scanResultsList=[];
   }
 
   async startScanning() {
@@ -120,13 +122,14 @@ export class HomePage implements OnInit {
     this.scanCount = 0;
     this.isScanning = true;
 
-    this.collectedData = []; // Clear previous data this is added later...
+    // this.collectedData = []; // Clear previous data this is added later...
     this.scanResultsList = [];
     await this.scanLoop();
+    if (!this.shouldStop){this.saveJsonToFileDownloads()}
   }
 
   async scanLoop() {
-    // this.scanResultsList = [];
+    this.scanResultsList = [];
     while ( !this.shouldStop && this.scanCount < this.totalScans) {
       try {
         const networks = await WifiWizard2.scan();
@@ -151,7 +154,7 @@ export class HomePage implements OnInit {
           wifi: wifiList
         };
 
-        this.collectedData.push(entry);
+        // this.collectedData.push(entry);
         this.scanResultsList.push(entry);
 
         this.scanCount++;
@@ -183,10 +186,10 @@ export class HomePage implements OnInit {
     } catch (err) {
       console.warn('Insomnia plugin failed:', err);
     }
+    if (this.shouldStop){this.scanResultsList = [];}
     alert(this.shouldStop 
       ? 'Scanning stopped.' 
       : 'All scans completed!');
-  
   }
 
   delay(ms: number) {
@@ -194,7 +197,7 @@ export class HomePage implements OnInit {
   }
 
   downloadJSON() {
-    const blob = new Blob([JSON.stringify(this.collectedData, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(this.scanResultsList, null, 2)], { type: 'application/json' });
     const url = window.URL.createObjectURL(blob);
 
     const a = document.createElement('a');
@@ -205,7 +208,7 @@ export class HomePage implements OnInit {
   }
   saveJsonToFile() {
     const fileName = 'wifi_dataset.json';
-    const data = JSON.stringify(this.collectedData, null, 2);
+    const data = JSON.stringify(this.scanResultsList, null, 2);
   
     this.file.writeFile(this.file.dataDirectory, fileName, data, { replace: true })
       .then(() => {
@@ -276,7 +279,7 @@ export class HomePage implements OnInit {
     ]);
     const fileName = 'wifi_dataset.json';
     const path = this.file.externalRootDirectory + 'Download/'; // Saving in Downloads folder
-    const newData = this.collectedData;
+    const newData = this.scanResultsList;
 
     try {
       // Check if file exists first

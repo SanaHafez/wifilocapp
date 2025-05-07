@@ -81,10 +81,10 @@
     </ion-row>
   </ion-grid>
 
-  <ion-grid>
+  <!-- <ion-grid>
     <ion-row>
       <ion-col size="6">
-        <!-- Show “Stop” if we’re scanning, otherwise “Start” -->
+        
         <ion-button 
           expand="block" 
           [color]="isScanning ? 'danger' : 'primary'"
@@ -102,9 +102,15 @@
         </ion-button>
       </ion-col>
     </ion-row>
-  </ion-grid>
+  </ion-grid> -->
   
-  
+          <!-- Show “Stop” if we’re scanning, otherwise “Start” -->
+          <ion-button 
+          expand="block" 
+          [color]="isScanning ? 'danger' : 'primary'"
+          (click)="isScanning ? stopScanning() : startScanning()">
+          {{ isScanning ? 'Stop Scanning' : (isScanning === false ? 'Start Scanning' : '...') }}
+        </ion-button>
   
 <!-- 
   <ion-item>
