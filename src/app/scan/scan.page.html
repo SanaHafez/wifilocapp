@@ -1,10 +1,13 @@
-<ion-header [translucent]="false">
+<ion-header [translucent]="true">
   <ion-toolbar>
+    <ion-buttons slot="start">
+          <ion-back-button default-href="/"></ion-back-button>
+        </ion-buttons>
     <ion-title>WiFi Fingerprinting</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true" class="ion-padding">
+<ion-content class="ion-padding">
   <!-- <ion-item>
     <ion-label position="floating">Room Name</ion-label>
     <ion-input [(ngModel)]="roomName"></ion-input>
@@ -63,7 +66,6 @@
     <ion-input type="number" [(ngModel)]="totalScans"></ion-input>
   </ion-item> -->
 
-
   <ion-grid>
     <ion-row>
       <ion-col size="6">
@@ -103,16 +105,18 @@
       </ion-col>
     </ion-row>
   </ion-grid> -->
-  
-          <!-- Show “Stop” if we’re scanning, otherwise “Start” -->
-          <ion-button 
-          expand="block" 
-          [color]="isScanning ? 'danger' : 'primary'"
-          (click)="isScanning ? stopScanning() : startScanning()">
-          {{ isScanning ? 'Stop Scanning' : (isScanning === false ? 'Start Scanning' : '...') }}
-        </ion-button>
-  
-<!-- 
+
+  <!-- Show “Stop” if we’re scanning, otherwise “Start” -->
+  <ion-button
+    expand="block"
+    [color]="isScanning ? 'danger' : 'primary'"
+    (click)="isScanning ? stopScanning() : startScanning()"
+  >
+    {{ isScanning ? 'Stop Scanning' : (isScanning === false ? 'Start Scanning' :
+    '...') }}
+  </ion-button>
+
+  <!-- 
   <ion-item>
     <ion-label position="floating">Scan Delay</ion-label>
     <ion-input type="number" [(ngModel)]="scanDelay"></ion-input>
@@ -125,7 +129,7 @@
     Save Dataset to Downloads Folder
   </ion-button> -->
 
-    <!-- <ion-button expand="block" color="success" (click)="downloadJSON()" [disabled]="isScanning">
+  <!-- <ion-button expand="block" color="success" (click)="downloadJSON()" [disabled]="isScanning">
     Download Dataset
   </ion-button> -->
 
@@ -138,19 +142,16 @@
         </ion-label>
       </ion-item>
     </ion-list> -->
-  <ion-item><ion-progress-bar *ngIf="isScanning" [value]="scanCount / totalScans" color="primary" buffer="1.0" >
-  </ion-progress-bar>
-  <ion-note slot="end">
-    {{ scanCount }}/{{ totalScans }}
-  </ion-note>
-</ion-item>
-
-
-
-  <ion-button [routerLink]="['/localize']">Localization</ion-button>
-
-  <ion-button [routerLink]="['/scan']">Collect Data</ion-button>
-
+  <ion-item
+    ><ion-progress-bar
+      *ngIf="isScanning"
+      [value]="scanCount / totalScans"
+      color="primary"
+      buffer="1.0"
+    >
+    </ion-progress-bar>
+    <ion-note slot="end"> {{ scanCount }}/{{ totalScans }} </ion-note>
+  </ion-item>
 
   <ion-item *ngFor="let scan of scanResultsList; let i = index">
     <ion-label>
