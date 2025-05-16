@@ -1,7 +1,8 @@
 {
   "name": "WifiLocApp",
   "integrations": {
-    "cordova": {}
+    "cordova": {},
+    "capacitor": {}
   },
   "type": "angular"
 }
