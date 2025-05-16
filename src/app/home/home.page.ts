@@ -2,9 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { Platform , AlertController } from '@ionic/angular';
 import { File } from '@awesome-cordova-plugins/file/ngx';
 import { Insomnia } from '@awesome-cordova-plugins/insomnia/ngx';
-// import { AndroidPermissions } from '@ionic-native/android-permissions/ngx';
-import { AndroidPermissions } from '@awesome-cordova-plugins/android-permissions';
-// import { Permissions,PermissionType } from '@capacitor/core';
+import { Geolocation } from '@capacitor/geolocation';
+import { Filesystem, Directory, Encoding,ReadFileResult  } from '@capacitor/filesystem';
 declare var WifiWizard2: any;
 
 @Component({
@@ -41,11 +40,13 @@ export class HomePage implements OnInit {
     this.platform.ready().then(async () => {
       console.log('Platform ready');
       this.isDeviceReady = true;
-    // Ask for Location permission on Android
-    // const status = await Permissions.query({ name: PermissionType.Location });
-    // if (status.state !== 'granted') {
-    //   await Permissions.request({ name: PermissionType.Location });
-    // }
+  // Request location permission via the Geolocation plugin
+     const perm = await Geolocation.requestPermissions();
+     // perm.location can be 'granted' | 'denied' | 'prompt'
+     if (perm.location !== 'granted') {
+       console.warn('Location permission denied');
+       return;
+     }
       
       WifiWizard2.startScan();
       
@@ -178,44 +179,67 @@ export class HomePage implements OnInit {
   }
 
   
-  async saveJsonToFileDownloads() {
+async saveJsonToFileDownloads() {
+  const fileName = 'wifi_dataset.json';
+  const newData  = this.scanResultsList;
 
-    const fileName = 'wifi_dataset.json';
-    const path = this.file.externalRootDirectory + 'Download/'; // Saving in Downloads folder
-    const newData = this.scanResultsList;
+  try {
+    // Try to read the existing file
+    const read: ReadFileResult = await Filesystem.readFile({
+      path:      fileName,
+      directory: Directory.Documents,
+      encoding:  Encoding.UTF8 
+    });
 
+    // Normalize data to string
+    let text = typeof read.data === 'string'
+      ? read.data
+      : await read.data.text();
+
+    // Parse with fallback on error
+    let oldArray: any[];
     try {
-      // Check if file exists first
-      const exists = await this.file.checkFile(path, fileName);
-
-      if (exists) {
-        // ✅ File exists: Read old data
-        const oldContent = await this.file.readAsText(path, fileName);
-        const oldData = JSON.parse(oldContent);
-
-        // ✅ Merge old data + new data
-        const mergedData = oldData.concat(newData);
-
-        // ✅ Save merged data back
-        await this.file.writeFile(path, fileName, JSON.stringify(mergedData, null, 2), { replace: true });
-
-        console.log('New data appended to existing JSON file!');
-        alert('New data appended to dataset!');
+      oldArray = JSON.parse(text);
+      if (!Array.isArray(oldArray)) {
+        console.warn('Existing file is not an array—overwriting.');
+        oldArray = [];
       }
+    } catch (parseErr) {
+      console.warn('Could not parse existing JSON—overwriting.', parseErr);
+      oldArray = [];
+    }
 
-    } catch (error) {
-      if ((error as any).code === 1) { // ✅ File not found
-        // ✅ Create new file
-        await this.file.writeFile(path, fileName, JSON.stringify(newData, null, 2), { replace: true });
-        console.log('New file created and data saved!');
-        alert('Dataset file created!');
-      } else {
-        console.error('Error saving file:', error);
-        alert('Failed to save file.');
+    // Merge & write back
+    const merged = oldArray.concat(newData);
+    await Filesystem.writeFile({
+      path:      fileName,
+      directory: Directory.Documents,
+      data:      JSON.stringify(merged, null, 2),
+      encoding:  Encoding.UTF8,
+    });
+    alert('✅ Appended to wifi_dataset.json in Documents');
+  }
+  catch (err: any) {
+    // If the file doesn’t exist, create it fresh
+    if (err.message?.includes('File does not exist')) {
+      try {
+        await Filesystem.writeFile({
+          path:      fileName,
+          directory: Directory.Documents,
+          data:      JSON.stringify(newData, null, 2),
+          encoding:  Encoding.UTF8,
+        });
+        alert('✅ Created wifi_dataset.json in Documents');
+      } catch (writeErr: any) {
+        console.error('Write failed:', writeErr);
+        alert('❌ Failed to create file: ' + writeErr.message);
       }
+    } else {
+      console.error('Read failed:', err);
+      alert('❌ Failed to read existing file: ' + err.message);
     }
   }
-
+}
 
   
   downloadJSON() {
