@@ -37,14 +37,14 @@
 @import "@ionic/angular/css/palettes/dark.system.css";
 
 
-ion-app {
-  /* only needed if you want the whole app inset,
-     but Ionic 6+ usually handles this automatically */
-  padding-top: env(safe-area-inset-top);
-}
+// ion-app {
+//   /* only needed if you want the whole app inset,
+//      but Ionic 6+ usually handles this automatically */
+//   padding-top: env(safe-area-inset-top);
+// }
 
 ion-header {
   /* this adds exactly the status-bar height on iOS/Android */
   padding-top: env(safe-area-inset-top);
-  background: var(--ion-color-primary);
+  // background: var(--ion-color-primary);
 }
