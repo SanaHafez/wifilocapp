@@ -36,6 +36,7 @@ import { AppRoutingModule } from './app-routing.module';
 import { File }      from '@awesome-cordova-plugins/file/ngx';
 import { WifiWizard2 } from '@awesome-cordova-plugins/wifi-wizard-2/ngx';
 import { Insomnia }  from '@awesome-cordova-plugins/insomnia/ngx';
+import { AndroidPermissions } from '@awesome-cordova-plugins/android-permissions/ngx';
 
 @NgModule({
   declarations: [AppComponent],
@@ -48,7 +49,8 @@ import { Insomnia }  from '@awesome-cordova-plugins/insomnia/ngx';
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
     File,
     WifiWizard2,
-    Insomnia
+    Insomnia,
+    AndroidPermissions
   ],
   bootstrap: [AppComponent],
 })
