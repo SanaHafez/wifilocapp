@@ -1,9 +1,13 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.example.app',
+  appId:  'io.ionic.starter',
   appName: 'WifiLocApp',
   webDir: 'www',
+
+  android: {
+    allowMixedContent: true
+  },
   cordova: {
     preferences: {
       ScrollEnabled: 'false',
