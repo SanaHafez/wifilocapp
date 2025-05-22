@@ -1,8 +1,8 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
     <ion-buttons slot="start">
-          <ion-back-button default-href="/"></ion-back-button>
-        </ion-buttons>
+      <ion-back-button default-href="/"></ion-back-button>
+    </ion-buttons>
     <ion-title>Localize</ion-title>
   </ion-toolbar>
 </ion-header>
@@ -13,4 +13,10 @@
       <ion-title size="large">localize</ion-title>
     </ion-toolbar>
   </ion-header>
+
+  <ion-button (click)="locate()">Where am I?</ion-button>
+  <ng-container *ngIf="position">
+    <p>Room: {{position.room}}</p>
+    <p>Coordinates: ({{position.x.toFixed(1)}}, {{position.y.toFixed(1)}})</p>
+  </ng-container>
 </ion-content>

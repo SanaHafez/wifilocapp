@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule }   from '@angular/common';
 import { FormsModule }    from '@angular/forms';
 import { IonicModule }    from '@ionic/angular';
-import { ApiService } from '../services/api.service';
+import { WifilocService } from '../services/wifiloc.service';
 
 @Component({
   selector: 'app-localize',
@@ -13,23 +13,23 @@ import { ApiService } from '../services/api.service';
 })
 export class LocalizePage implements OnInit {
 
-    constructor(private api: ApiService) {}
+  position: any;
+
+    constructor(private wifiService: WifilocService) {}
 
 
   ngOnInit() {
   }
 
-   async runDemo() {
-    const ssids = ['eduroam','HomeWiFi123','Guest'];
-    this.api.classifySsids(ssids).subscribe(res => {
-      console.log('Labels:', res.labels);
-    });
-
-    const sampleRssi = { 'eduroam': -60, 'HomeWiFi123': -80 };
-    this.api.localize(sampleRssi).subscribe(loc => {
-      console.log(`You are on floor ${loc.room} at (${loc.x},${loc.y})`);
-    });
+async locate() {
+  try {
+    const res = await this.wifiService.scanAndLocalize();
+    console.log('Room:', res.room, 'Coordinates:', res.x, res.y);
+    this.position = res;
+  } catch(err) {
+    console.error(err);
   }
+}
 }
 
 

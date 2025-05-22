@@ -1,13 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 
-import { ApiService } from './api.service';
+import { WifilocService } from './wifiloc.service';
 
-describe('ApiService', () => {
-  let service: ApiService;
+describe('WifilocService', () => {
+  let service: WifilocService;
 
   beforeEach(() => {
     TestBed.configureTestingModule({});
-    service = TestBed.inject(ApiService);
+    service = TestBed.inject(WifilocService);
   });
 
   it('should be created', () => {

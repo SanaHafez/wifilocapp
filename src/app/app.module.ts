@@ -37,13 +37,15 @@ import { File }      from '@awesome-cordova-plugins/file/ngx';
 import { WifiWizard2 } from '@awesome-cordova-plugins/wifi-wizard-2/ngx';
 import { Insomnia }  from '@awesome-cordova-plugins/insomnia/ngx';
 import { AndroidPermissions } from '@awesome-cordova-plugins/android-permissions/ngx';
+import { HttpClientModule } from '@angular/common/http';
 
 @NgModule({
   declarations: [AppComponent],
   imports: [
     BrowserModule,
     IonicModule.forRoot(),
-    AppRoutingModule
+    AppRoutingModule,
+    HttpClientModule
   ],
   providers: [
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
