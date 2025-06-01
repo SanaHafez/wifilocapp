@@ -11,8 +11,11 @@ export class WifilocService {
   // ionic serve --ssl false
 
 
-  private serverUrl = 'http://192.168.8.175:5000/api/localize';  // your PC’s LAN IP
+  // private serverUrl = 'http://192.168.8.175:5000/api/localize';  // your PC’s LAN IP
   // private serverUrl = '/api/localize'; 
+
+ 
+  private serverUrl =  'https://us-central1-motapp-422721.cloudfunctions.net/localize'
 
   constructor(
     private wifiWizard2: WifiWizard2,
