@@ -1,49 +1,79 @@
-/* localize.page.scss */
+/* src/app/localize/localize.page.scss */
 
+:host {
+  ion-content {
+    --padding-top: 0;
+    --padding-bottom: 0;
+    --padding-start: 0;
+    --padding-end: 0;
+  }
+}
+/* This makes the wrapper fill the whole screen and hide overflow */
 .map-wrapper {
-  position: relative;
-  width: 100%;
-  height: 60vh;         /* adjust to taste */
+  position: absolute;
+  top:    0;
+  bottom: 0;
+  left:   0;
+  right:  0;
   overflow: hidden;
-  border: 1px solid #ccc;
-  margin-bottom: 16px;
 }
 
+/* Panzoom will be attached here. We keep it “position: relative” so its children can be absolutely positioned. */
 .pan-container {
   position: relative;
-  transform-origin: 0 0; 
-  /* We will let Panzoom handle the transform. Do NOT put a CSS transition here 
-     if you want instant, user‐driven panning. Pinch‐zoom will be handled by Panzoom. */
-  touch-action: none; /* IMPORTANT: allow Panzoom to capture touch‐pan/pinch */
+  display: inline-block;
+  touch-action: none; /* so that panzoom grabs touch gestures */
 }
 
-.floorplan-image {
+/* Ensure the image never scales on its own except via Panzoom. */
+.floor-image {
   display: block;
-  user-select: none;
+  max-width: none; 
+  user-select: none; 
   -webkit-user-drag: none;
-  width: auto;
-  height: auto;
-  max-width: none; /* so the image stays at natural size inside panContainer */
+  pointer-events: none;
 }
 
-.marker {
+/* The little red circle that marks your computed position. */
+.marker-dot {
   position: absolute;
   width: 12px;
   height: 12px;
-  background-color: rgba(255, 0, 0, 0.8);
-  border: 2px solid white;
+  background: red;
   border-radius: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 10;
-  pointer-events: none; /* Let touch events pass through marker */
+  transform: translate(-50%, -50%); /* center the dot exactly at (left,top) */
+  pointer-events: none;
+  z-index: 10; /* make sure it’s above the image */
 }
 
-.button-row {
-  margin: 0 16px 16px;
-}
 
-.info {
-  margin: 0 16px;
-  font-size: 0.9rem;
-  text-align: center;
-}
+
+// .map-wrapper {
+//   position: relative;
+//   width: 100%;
+//   height: 100%;
+//   overflow: hidden;
+// }
+
+// .pan-container {
+//   position: relative;
+//   width: 100%;
+//   height: 100%;
+//   touch-action: none; /* so panzoom can capture gestures */
+// }
+
+// .floor-image {
+//   display: block;
+//   max-width: 100%;
+//   height: auto;
+//   user-select: none;
+//   -webkit-user-drag: none;
+// }
+
+// .marker {
+//   position: absolute;
+//   left: 0;
+//   top: 0;
+//   font-size: 24px;
+//   pointer-events: none;
+// }

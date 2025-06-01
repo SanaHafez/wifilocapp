@@ -1,46 +1,55 @@
-<!-- localize.page.html -->
+<!-- src/app/localize/localize.page.html -->
+
 <ion-header>
   <ion-toolbar>
     <ion-title>Wi-Fi Localization</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="locate()">Locate Me</ion-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true" class="ion-padding">
-  <!-- Outer wrapper: holds a fixed‐height box with overflow hidden -->
-  <div #mapWrapper class="map-wrapper">
-    <!-- This inner div is the Panzoom “pan+zoom” root. -->
-    <div #panContainer class="pan-container">
+<ion-content>
+  <!--
+    panContainer is the element on which Panzoom is initialized.
+    mapWrapper is a fixed‐size viewport showing the zoomable area.
+  -->
+  <div
+    #mapWrapper
+    style="position: absolute; top: 0; bottom: 0; left: 0; right: 0; overflow: hidden;"
+  >
+    <div
+      #panContainer
+      style="display: inline-block; position: relative;"
+    >
+      <!-- The floorplan‐with‐grid PNG. -->
       <img
         #floorImg
         src="assets/U1F_floorplan_with_grid.png"
-        alt="Floor Plan with Grid"
-        class="floorplan-image"
-        (load)="onImageLoad()"
+        style="display: block; max-width: none; user-select: none; -webkit-user-drag: none;"
+        draggable="false"
       />
 
-      <!-- Red “marker” dot, positioned absolutely within panContainer -->
+      <!--
+        A small red dot to mark the computed position.
+        Its `left`/`top` are bound to `markerPx.x` / `markerPx.y` in CSS px.
+        We also translate(−50%, −50%) so that the dot’s center is placed exactly at that point.
+      -->
       <div
+        #markerDot
         *ngIf="markerPx"
-        class="marker"
-        [ngStyle]="{
-          left: markerPx.x + 'px',
-          top: markerPx.y + 'px'
-        }"
+        [style.left.px]="markerPx.x"
+        [style.top.px]="markerPx.y"
+        style="
+          position: absolute;
+          width: 12px;
+          height: 12px;
+          background: red;
+          border-radius: 50%;
+          transform: translate(-50%, -50%);
+          pointer-events: none;
+        "
       ></div>
     </div>
-  </div>
-
-  <div class="button-row">
-    <ion-button expand="block" (click)="locate()">
-      Locate Me
-    </ion-button>
-  </div>
-
-  <div *ngIf="position" class="info">
-    <p><strong>Room:</strong> {{ position.room }}</p>
-    <p>
-      <strong>X (m):</strong> {{ position.x.toFixed(1) }},
-      <strong>Y (m):</strong> {{ position.y.toFixed(1) }}
-    </p>
   </div>
 </ion-content>
