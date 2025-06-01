@@ -8,7 +8,7 @@
 </ion-header>
 
 <ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
+  <!-- <ion-header collapse="condense">
     <ion-toolbar>
       <ion-title size="large">localize</ion-title>
     </ion-toolbar>
@@ -18,5 +18,44 @@
   <ng-container *ngIf="position">
     <p>Room: {{position.room}}</p>
     <p>Coordinates: ({{position.x.toFixed(1)}}, {{position.y.toFixed(1)}})</p>
-  </ng-container>
+  </ng-container> -->
+
+  <!-- src/app/localize/localize.page.html -->
+
+  <ion-button expand="full" (click)="locate()">
+    Locate Me
+  </ion-button>
+
+  <!-- If `position` is set, show the coordinates and the map -->
+  <div 
+  
+  class="map-wrapper">
+    <div class="map-container">
+      <!-- Floor plan with grid as an <img> -->
+      <img
+        src="assets/U1F_floorplan_with_grid.png"
+        alt="Floor Plan with Grid"
+        class="floorplan-image"
+        (load)="onImageLoad($event)"
+      />
+
+      <!-- Marker overlay: only show after we know pixel coords -->
+      <div
+        *ngIf="markerPx"
+        class="marker"
+        [ngStyle]="{
+          left: markerPx.x + 'px',
+          top: markerPx.y + 'px'
+        }"
+      ></div>
+    </div>
+
+    <div *ngIf="position"  class="info">
+      <p><strong>Room:</strong> {{ position.room }}</p>
+      <p><strong>X (m):</strong> {{ position.x.toFixed(1) }}, 
+         <strong>Y (m):</strong> {{ position.y.toFixed(1) }}
+      </p>
+    </div>
+  </div>
+
 </ion-content>
