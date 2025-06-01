@@ -1,28 +1,31 @@
-/* src/app/localize/localize.page.scss */
+/* localize.page.scss */
 
 .map-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin: 0 16px;
-}
-
-.map-container {
   position: relative;
   width: 100%;
-  /* If your image is very large, you might want to set a max‐height and allow scrolling */
-  max-height: 70vh;
-  overflow: auto;
+  height: 60vh;         /* adjust to taste */
+  overflow: hidden;
   border: 1px solid #ccc;
+  margin-bottom: 16px;
+}
+
+.pan-container {
+  position: relative;
+  transform-origin: 0 0; 
+  /* We will let Panzoom handle the transform. Do NOT put a CSS transition here 
+     if you want instant, user‐driven panning. Pinch‐zoom will be handled by Panzoom. */
+  touch-action: none; /* IMPORTANT: allow Panzoom to capture touch‐pan/pinch */
 }
 
 .floorplan-image {
   display: block;
-  max-width: 100%;
+  user-select: none;
+  -webkit-user-drag: none;
+  width: auto;
   height: auto;
+  max-width: none; /* so the image stays at natural size inside panContainer */
 }
 
-/* Red circle (marker) that shows “where you are” in pixel coords */
 .marker {
   position: absolute;
   width: 12px;
@@ -30,12 +33,17 @@
   background-color: rgba(255, 0, 0, 0.8);
   border: 2px solid white;
   border-radius: 50%;
-  transform: translate(-50%, -50%); /* center the marker exactly at the pixel */
+  transform: translate(-50%, -50%);
   z-index: 10;
+  pointer-events: none; /* Let touch events pass through marker */
+}
+
+.button-row {
+  margin: 0 16px 16px;
 }
 
 .info {
-  margin-top: 12px;
+  margin: 0 16px;
   font-size: 0.9rem;
   text-align: center;
 }

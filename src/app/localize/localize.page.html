@@ -1,45 +1,24 @@
-<ion-header [translucent]="true">
+<!-- localize.page.html -->
+<ion-header>
   <ion-toolbar>
-    <ion-buttons slot="start">
-      <ion-back-button default-href="/"></ion-back-button>
-    </ion-buttons>
-    <ion-title>Localize</ion-title>
+    <ion-title>Wi-Fi Localization</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <!-- <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">localize</ion-title>
-    </ion-toolbar>
-  </ion-header>
-
-  <ion-button (click)="locate()">Where am I?</ion-button>
-  <ng-container *ngIf="position">
-    <p>Room: {{position.room}}</p>
-    <p>Coordinates: ({{position.x.toFixed(1)}}, {{position.y.toFixed(1)}})</p>
-  </ng-container> -->
-
-  <!-- src/app/localize/localize.page.html -->
-
-  <ion-button expand="full" (click)="locate()">
-    Locate Me
-  </ion-button>
-
-  <!-- If `position` is set, show the coordinates and the map -->
-  <div 
-  
-  class="map-wrapper">
-    <div class="map-container">
-      <!-- Floor plan with grid as an <img> -->
+<ion-content [fullscreen]="true" class="ion-padding">
+  <!-- Outer wrapper: holds a fixed‐height box with overflow hidden -->
+  <div #mapWrapper class="map-wrapper">
+    <!-- This inner div is the Panzoom “pan+zoom” root. -->
+    <div #panContainer class="pan-container">
       <img
+        #floorImg
         src="assets/U1F_floorplan_with_grid.png"
         alt="Floor Plan with Grid"
         class="floorplan-image"
-        (load)="onImageLoad($event)"
+        (load)="onImageLoad()"
       />
 
-      <!-- Marker overlay: only show after we know pixel coords -->
+      <!-- Red “marker” dot, positioned absolutely within panContainer -->
       <div
         *ngIf="markerPx"
         class="marker"
@@ -49,13 +28,19 @@
         }"
       ></div>
     </div>
-
-    <div *ngIf="position"  class="info">
-      <p><strong>Room:</strong> {{ position.room }}</p>
-      <p><strong>X (m):</strong> {{ position.x.toFixed(1) }}, 
-         <strong>Y (m):</strong> {{ position.y.toFixed(1) }}
-      </p>
-    </div>
   </div>
 
+  <div class="button-row">
+    <ion-button expand="block" (click)="locate()">
+      Locate Me
+    </ion-button>
+  </div>
+
+  <div *ngIf="position" class="info">
+    <p><strong>Room:</strong> {{ position.room }}</p>
+    <p>
+      <strong>X (m):</strong> {{ position.x.toFixed(1) }},
+      <strong>Y (m):</strong> {{ position.y.toFixed(1) }}
+    </p>
+  </div>
 </ion-content>
