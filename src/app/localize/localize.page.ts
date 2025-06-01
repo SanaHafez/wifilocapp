@@ -45,7 +45,7 @@ export class LocalizePage implements OnInit, AfterViewInit  {
 
   ngOnInit() {
   }
-ngAfterViewInit() {
+  ngAfterViewInit() {
     // Once Angular has rendered the panContainer, initialize Panzoom on it:
     const panEl = this.panContainerRef.nativeElement;
 
@@ -77,7 +77,7 @@ ngAfterViewInit() {
 //   }
 // }
 
-async locate() {
+  async locate() {
     try {
       const res = await this.wifiService.scanAndLocalize();
       // res: { room: string, x: number, y: number } in meters

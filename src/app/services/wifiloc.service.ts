@@ -3,7 +3,14 @@ import { lastValueFrom } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Http } from '@capacitor-community/http';
 import { WifiWizard2 } from '@awesome-cordova-plugins/wifi-wizard-2/ngx';
+import { Platform } from '@ionic/angular';
 // declare var WifiWizard2: any;
+
+export interface LocalizationResult {
+  room: string;
+  x: number;
+  y: number;
+}
 @Injectable({
   providedIn: 'root'
 })
@@ -19,24 +26,58 @@ export class WifilocService {
 
   constructor(
     private wifiWizard2: WifiWizard2,
-    private http: HttpClient
+    private http: HttpClient,
+    private platform: Platform,
   ) { }
 
-  async scanAndLocalize(): Promise<{ room: string, x: number, y: number }> {
+
+public async scanAndLocalize(): Promise<LocalizationResult> {
+    if (!this.platform.is('android')) {
+    throw new Error('Wi-Fi scanning only works on Android device');
+  }
+  try {
     const networks = await this.wifiWizard2.scan();
-    const payload = networks.map((n: { SSID: any; BSSID: any; level: any; }) => ({
+    const payloadNetworks = networks
+    .filter((n: { SSID: { trim: () => { (): any; new(): any; length: number; }; }; }) => n.SSID && n.SSID.trim().length > 0)
+    .map((n: { SSID: any; BSSID: any; level: any; }) => ({
       ssid: n.SSID,
       bssid: n.BSSID,
-      level: n.level
+      rssi: n.level
     }));
+
+    const payload = { networks: payloadNetworks };
+
     const result = await lastValueFrom(
-      this.http.post<{ room: string, x: number, y: number }>(this.serverUrl, { networks: payload })
+      this.http.post<LocalizationResult>(this.serverUrl, payload )
     );
+
     if (!result) {
       throw new Error('Localization failed: No response from server');
     }
-    return result;
+        // 6) Return the parsed localization
+    return {
+      room: result.room,
+      x: result.x,
+      y: result.y,
+    };
+  } catch (scanErr) {
+    console.error('❌ Failed to scan Wi‐Fi networks:', scanErr);
+    throw new Error('Wi-Fi scan failed');
   }
+}
+  //   const payload = networks.map((n: { SSID: any; BSSID: any; level: any; }) => ({
+  //     ssid: n.SSID,
+  //     bssid: n.BSSID,
+  //     level: n.level
+  //   }));
+  //   const result = await lastValueFrom(
+  //     this.http.post<{ room: string, x: number, y: number }>(this.serverUrl, { networks: payload })
+  //   );
+  //   if (!result) {
+  //     throw new Error('Localization failed: No response from server');
+  //   }
+  //   return result;
+  // }
   // async scanAndLocalize() {
   //   const networks = await WifiWizard2.scan();
   //   const data = { networks: networks.map(n => ({ ssid: n.SSID, bssid: n.BSSID, level: n.level })) };
