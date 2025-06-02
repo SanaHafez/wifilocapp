@@ -10,46 +10,6 @@
 </ion-header>
 
 <ion-content>
-  <!--
-    panContainer is the element on which Panzoom is initialized.
-    mapWrapper is a fixed‐size viewport showing the zoomable area.
-  -->
-  <div
-    #mapWrapper
-    style="position: absolute; top: 0; bottom: 0; left: 0; right: 0; overflow: hidden;"
-  >
-    <div
-      #panContainer
-      style="display: inline-block; position: relative;"
-    >
-      <!-- The floorplan‐with‐grid PNG. -->
-      <img
-        #floorImg
-        src="assets/U1F_floorplan_with_grid.png"
-        style="display: block; max-width: none; user-select: none; -webkit-user-drag: none;"
-        draggable="false"
-      />
-
-      <!--
-        A small red dot to mark the computed position.
-        Its `left`/`top` are bound to `markerPx.x` / `markerPx.y` in CSS px.
-        We also translate(−50%, −50%) so that the dot’s center is placed exactly at that point.
-      -->
-      <div
-        #markerDot
-        *ngIf="markerPx"
-        [style.left.px]="markerPx.x"
-        [style.top.px]="markerPx.y"
-        style="
-          position: absolute;
-          width: 12px;
-          height: 12px;
-          background: red;
-          border-radius: 50%;
-          transform: translate(-50%, -50%);
-          pointer-events: none;
-        "
-      ></div>
-    </div>
-  </div>
+  <!-- The full‐screen Leaflet container: -->
+  <div id="map" style="height: 100%; width: 100%;"></div>
 </ion-content>

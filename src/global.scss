@@ -48,3 +48,15 @@ ion-header {
   padding-top: env(safe-area-inset-top);
   // background: var(--ion-color-primary);
 }
+
+
+.leaflet-marker-dot {
+  width: 12px;
+  height: 12px;
+  background: red;
+  border-radius: 50%;
+  pointer-events: none;
+  /* optional border to stand out on the grid */
+  border: 1px solid white;
+  box-sizing: border-box;
+}

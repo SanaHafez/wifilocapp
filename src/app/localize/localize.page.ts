@@ -3,15 +3,14 @@
 import {
   Component,
   OnInit,
-  ViewChild,
-  ElementRef,
   AfterViewInit,
   NgZone
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonicModule, GestureController } from '@ionic/angular';
-import panzoom from '@panzoom/panzoom';
+import { IonicModule, Platform } from '@ionic/angular';
+
+import * as L from 'leaflet';
 import { WifilocService, LocalizationResult } from '../services/wifiloc.service';
 
 @Component({
@@ -22,117 +21,102 @@ import { WifilocService, LocalizationResult } from '../services/wifiloc.service'
   imports: [IonicModule, CommonModule, FormsModule]
 })
 export class LocalizePage implements OnInit, AfterViewInit {
-  @ViewChild('floorImg', { read: ElementRef }) floorImgRef!: ElementRef<HTMLImageElement>;
-  @ViewChild('mapWrapper', { read: ElementRef }) mapWrapperRef!: ElementRef<HTMLElement>;
-  @ViewChild('panContainer', { read: ElementRef }) panContainerRef!: ElementRef<HTMLElement>;
-  @ViewChild('markerDot', { read: ElementRef }) markerDotRef!: ElementRef<HTMLElement>;
+  private map!: L.Map;
+  private markerLayer!: L.LayerGroup;
 
-  // Holds the last returned (room, x, y)
-  position: { room: string; x: number; y: number } | null = null;
+  // ── Calibration constants ───────────────────────────────────────
+  // At 200 DPI you found (x0=1760 px, y0=4222 px) from the top‐left.
+  // Since the PNG is 600 DPI, scale each by 3:
+   private readonly x0_px    = 1044;   // left‐bottom pixel (x0)
+   private readonly y0_px    = 2506;   // left‐bottom pixel (x0)
+  private readonly y_end_px = 176;    // top‐end pixel (y_end)
+  private readonly pixPerM  = Math.hypot(1954 - 1811, 2380 - 2380) / 2.9;  
+  // (you can also hardcode the final pixPerM value from Python, e.g. 100 px/m etc.)
 
-  // Calibration constants (copy exactly from your Python):
-  private readonly x0_px    = 1760;   // “0 meters” origin x in native‐pixel coords
-  private readonly y_end_px = 397;    // “0 meters” origin y in native‐pixel coords (top of image)
-  private readonly pixPerM  = Math.hypot(3276 - 3042, 4161 - 4166) / 2.9;
-  // (In Python: pix_per_m = np.hypot(x2-x1, y2-y1)/2.9.)
-
-  // We will store the image’s natural dimensions once it loads:
-  private naturalWidth  = 1;
-  private naturalHeight = 1;
-
-  // Panzoom instance
-  private panzoomInstance!: ReturnType<typeof panzoom>;
-
-  // Current marker position in CSS px (for [(style.left.px)] and .top):
-  markerPx: { x: number; y: number } | null = null;
+  // These will be set once the image loads:
+  private imageWidth = 1;
+  private imageHeight = 1;
 
   constructor(
     private wifiService: WifilocService,
-    private zone: NgZone
-  ) {}
+    private zone: NgZone,
+    private plt: Platform
+  ) { }
 
   ngOnInit() {
-    // nothing here
+    // no-op
   }
 
   ngAfterViewInit() {
-    // 1) Initialize Panzoom on the container – allow pinch‐to‐zoom + drag.
-    const panEl = this.panContainerRef.nativeElement;
-    this.panzoomInstance = panzoom(panEl, {
-      maxZoom: 4,       // 400%
-      minZoom: 1,       // 100%
-      bounds: true,
-      boundsPadding: 0.1,
-      zoomDoubleClickSpeed: 1.0
-    });
+    // Step 1: Preload the PNG so we know its actual “natural” dimensions:
+    const img = new Image();
+    img.src = 'assets/U1F_floorplan_with_2x2m_grid_600dpi.png';
+    img.onload = () => {
+      this.imageWidth = img.naturalWidth;
+      this.imageHeight = img.naturalHeight;
 
-    // 2) Once the <img> fully loads, capture its naturalWidth/naturalHeight
-    const imgEl = this.floorImgRef.nativeElement;
-    imgEl.onload = () => {
-      this.naturalWidth  = imgEl.naturalWidth;
-      this.naturalHeight = imgEl.naturalHeight;
-      // Optionally center‐initial view here, but we’ll leave it at top‐left.
+      // Step 2: Initialize Leaflet in CRS.Simple (1px = 1 map‐unit at zoom 0)
+      this.map = L.map('map', {
+        crs: L.CRS.Simple,
+        zoomSnap: 0.5,       // allow 0.5 zoom increments if you like
+        minZoom: -5,
+        maxZoom: 4,
+        zoomControl: true,
+        attributionControl: false
+      });
+
+      // Step 3: Compute the image bounds in “map coordinates” at zoom 0
+      // “southWest” = bottom-left in pixel space → unproject([0, imageHeight], 0)
+      // “northEast” = top-right in pixel space → unproject([imageWidth, 0], 0)
+      const sw = this.map.unproject([0, this.imageHeight], 0);
+      const ne = this.map.unproject([this.imageWidth, 0], 0);
+      const imageBounds = new L.LatLngBounds(sw, ne);
+
+      // Step 4: Place the overlay, fix map bounds, and set initial zoom to 1.5
+      L.imageOverlay('assets/U1F_floorplan_with_grid.png', imageBounds).addTo(this.map);
+      this.map.setMaxBounds(imageBounds);
+      this.map.fitBounds(imageBounds, { maxZoom: 2, animate: false });
+
+      // Step 5: Create a layer group for the red dot(s)
+      this.markerLayer = L.layerGroup().addTo(this.map);
     };
   }
 
-  /**
-   * Called when the user taps “Locate Me.” 
-   *  – Scans Wi‐Fi, calls the cloud function, gets (room, x, y) in meters.
-   *  – Converts (x,y) → pixel coords on the native image → CSS px → zoom/pan so dot is centered.
-   */
+  /** Called by the “Locate Me” button in your template */
   async locate() {
     try {
+      // STEP 1: Ask your service for (room, x, y) in meters
       const res: LocalizationResult = await this.wifiService.scanAndLocalize();
       console.log('Room:', res.room, 'Meters:', res.x, res.y);
-      this.position = res;
 
-      // 1) Convert (meters) → native pixels:
+      // STEP 2: Convert (meters → native 600 DPI pixels).
+      //   At Y=0 m, pixel-from-top = y0_px.
+      //   As y (meters) increases, we move up in the image (i.e. fewer px from top):
       const pxNatX = this.x0_px + res.x * this.pixPerM;
-      // In Python you used bottom-left origin. Here y=0 => pixel Y = y_end_px.
-      // As y increases (meters up), we go downward in the image coordinate,
-      // so subtract res.y * pixPerM:
-      const pxNatY = this.y_end_px - res.y * this.pixPerM;
+      const pxNatY = this.y0_px - res.y * this.pixPerM;
 
-      // 2) Convert native pixels → displayed CSS pixels:
-      const imgEl = this.floorImgRef.nativeElement;
-      const displayedW  = imgEl.clientWidth;
-      const displayedH  = imgEl.clientHeight;
-      // The scale factor image uses automatically (e.g. `max-width:100%`)
-      const scaleX = displayedW  / this.naturalWidth;
-      const scaleY = displayedH / this.naturalHeight;
-      // (Normally scaleX===scaleY if you set `width:100%; height:auto`)
+      // STEP 3: Unproject these native‐pixel coords at zoom=0 → a Leaflet latlng
+      //   (CRS.Simple treats [px, py] as [x, y] measured from top-left):
+      const latlng = this.map.unproject([pxNatX, pxNatY], 0);
 
-      const cssPxX = pxNatX * scaleX;
-      const cssPxY = pxNatY * scaleY;
-      this.markerPx = { x: cssPxX, y: cssPxY };
+      // STEP 4: Remove any old dot, then draw a new divIcon
+      this.markerLayer.clearLayers();
+      const dotIcon = L.divIcon({
+        className: 'leaflet-marker-dot',
+        iconSize:   [12, 12],
+        iconAnchor: [6, 6]  // center of the 12×12 dot sits exactly at latlng
+      });
+      L.marker(latlng, { icon: dotIcon }).addTo(this.markerLayer);
 
-      // 3) Now choose a target zoom level (e.g. 2×):
-      const targetZoom = 2;
-
-      // 4) Compute the pan offset so that (cssPxX, cssPxY) ends up in the center of the wrapper
-      const wrapperEl = this.mapWrapperRef.nativeElement;
-      const wrapW = wrapperEl.clientWidth;
-      const wrapH = wrapperEl.clientHeight;
-
-      // After zooming, the on‐screen pixel of our marker = (cssPxX * targetZoom, cssPxY * targetZoom).
-      // We want that to land at (wrapW/2, wrapH/2). Therefore:
-      //   panX = (wrapW/2)  - (cssPxX * targetZoom)
-      //   panY = (wrapH/2)  - (cssPxY * targetZoom)
-      const shiftX = wrapW/2 - cssPxX * targetZoom;
-      const shiftY = wrapH/2 - cssPxY * targetZoom;
-
-      // 5) Animate zoom first, then pan:
-      this.zone.run(() => {
-        // Zoom around center of wrapper:
-        this.panzoomInstance.zoom(targetZoom, { animate: true });
-        // Then move to ensure marker is centered:
-        // this.panzoomInstance.moveTo(shiftX, shiftY, { animate: true });
+      // STEP 5: Pan (not zoom) so that your dot stays in view, preserving current zoom
+      const currentZoom = this.map.getZoom();
+      this.map.flyTo(latlng, currentZoom, {
+        animate: true,
+        duration: 1.0
       });
     }
-    catch (err:any) {
+    catch (err: any) {
       console.error('Localization error:', err);
-      this.position = null;
-      this.markerPx = null;
       alert('Localization failed: ' + (err.message || err));
     }
   }

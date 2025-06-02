@@ -8,23 +8,43 @@
     --padding-end: 0;
   }
 }
+
+/* localize.page.scss */
+.leaflet-marker-dot {
+  width: 12px;
+  height: 12px;
+  background: red;
+  border-radius: 50%;
+  pointer-events: none;
+}
+// .leaflet‐marker‐dot {
+//   width: 12px;
+//   height: 12px;
+//   background: red;
+//   border: 2px solid white;    /* optional white border so it stands out */
+//   border-radius: 50%;
+//   box-shadow: 0 0 4px rgba(0,0,0,0.3);
+//   /* ensure it’s centered exactly at the “tip” of the icon: */
+//   transform: translate(-50%, -50%);
+//   pointer-events: none;
+// }
+
 /* This makes the wrapper fill the whole screen and hide overflow */
-.map-wrapper {
-  position: absolute;
-  top:    0;
-  bottom: 0;
-  left:   0;
-  right:  0;
-  overflow: hidden;
+#mapWrapper {
+  position:absolute;
+  top:0; bottom:0; left:0; right:0;
+  overflow:hidden;
 }
-
-/* Panzoom will be attached here. We keep it “position: relative” so its children can be absolutely positioned. */
-.pan-container {
-  position: relative;
-  display: inline-block;
-  touch-action: none; /* so that panzoom grabs touch gestures */
+#panContainer {
+  display:inline-block;
+  position:relative;
 }
-
+img {
+  display:block;
+  max-width:none;
+  user-select:none;
+  -webkit-user-drag:none;
+}
 /* Ensure the image never scales on its own except via Panzoom. */
 .floor-image {
   display: block;
