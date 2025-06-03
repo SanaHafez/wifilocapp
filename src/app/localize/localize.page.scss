@@ -10,13 +10,13 @@
 }
 
 /* localize.page.scss */
-.leaflet-marker-dot {
-  width: 12px;
-  height: 12px;
-  background: red;
-  border-radius: 50%;
-  pointer-events: none;
-}
+// .leaflet-marker-dot {
+//   width: 12px;
+//   height: 12px;
+//   background: red;
+//   border-radius: 50%;
+//   pointer-events: none;
+// }
 // .leaflet‐marker‐dot {
 //   width: 12px;
 //   height: 12px;
@@ -66,6 +66,29 @@ img {
   z-index: 10; /* make sure it’s above the image */
 }
 
+/* localize.page.scss */
+#map {
+  width: 100%;
+  height: calc(100% - 56px); /* header (56px) + button row (~56px) */
+}
+.leaflet-marker-dot,
+.leaflet-marker-dot-green {
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  margin-top: -6px;
+}
+.leaflet-marker-dot {
+  background-color: red;
+  border-radius: 50%;
+  opacity: 0.9;
+}
+
+.leaflet-marker-dot-green {
+  background-color: limegreen;
+  border-radius: 50%;
+  opacity: 0.9;
+}
 
 
 // .map-wrapper {

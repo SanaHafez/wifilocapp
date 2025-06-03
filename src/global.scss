@@ -60,3 +60,52 @@ ion-header {
   border: 1px solid white;
   box-sizing: border-box;
 }
+
+.leaflet-marker-dot1 {
+  width: 12px;
+  height: 12px;
+  background: rgb(11, 173, 106);
+  border-radius: 50%;
+  pointer-events: none;
+  /* optional border to stand out on the grid */
+  border: 1px solid white;
+  box-sizing: border-box;
+}
+
+.leaflet-marker-dot2 {
+  width: 12px;
+  height: 12px;
+  background: rgb(1, 54, 168);
+  border-radius: 50%;
+  pointer-events: none;
+  /* optional border to stand out on the grid */
+  border: 1px solid white;
+  box-sizing: border-box;
+}
+
+#map {
+  width: 100%;
+  height: calc(100% - 56px); /* 56px for header + ~56px for grid, adjust if needed */
+}
+
+/* Red dot (current) */
+.leaflet-marker-dot {
+  width: 12px;
+  height: 12px;
+  background-color: red;
+  border-radius: 50%;
+  opacity: 0.9;
+  margin-left: -6px;
+  margin-top: -6px;
+}
+
+/* Green dot (target) */
+.leaflet-marker-dot-green {
+  width: 12px;
+  height: 12px;
+  background-color: limegreen;
+  border-radius: 50%;
+  opacity: 0.9;
+  margin-left: -6px;
+  margin-top: -6px;
+}
