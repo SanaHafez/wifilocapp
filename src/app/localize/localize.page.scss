@@ -90,6 +90,23 @@ img {
   opacity: 0.9;
 }
 
+/* 1a) Allow the map container to show rotated corners */
+.leaflet-container {
+  overflow: visible !important;
+}
+
+/* 1b) Also allow the parent of #map (ionic-content) to show overflow if needed */
+
+.toolbar‐small {
+  --min-height: 40px;     /* Shrink this toolbar’s height */
+  --max-height: 40px;
+}
+
+// Optional: reduce padding on ion-item inside the small toolbar
+ion-item.toolbar‐small {
+  --inner-padding-top: 0;
+  --inner-padding-bottom: 0;
+}
 
 // .map-wrapper {
 //   position: relative;

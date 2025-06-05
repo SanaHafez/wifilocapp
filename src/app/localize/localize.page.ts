@@ -14,7 +14,16 @@ import { IonicModule, IonModal, Platform } from '@ionic/angular';
 import * as L from 'leaflet';
 // import 'leaflet-rotatedmarker';
 import { WifilocService, LocalizationResult } from '../services/wifiloc.service';
-// import { DeviceOrientation, DeviceOrientationCompassHeading } from '@awesome-cordova-plugins/device-orientation/ngx';
+// Update the import path if the file is in a different location, for example:
+// …other imports…
+import { roomCenters } from '../data/room-centers';    // ← the lookup table
+
+// Or, if the file does not exist, create 'src/utils/occupancy.ts' and export 'buildOccupancyGrid' from it.
+import { astarGrid } from '../utils/astar';
+import { dijkstraGrid } from '../utils/dijkstraGrid';
+
+import { buildOccupancyGrid } from '../utils/occupancy';
+import { DeviceOrientation, DeviceOrientationCompassHeading } from '@awesome-cordova-plugins/device-orientation/ngx';
 
 @Component({
   selector: 'app-localize',
@@ -25,6 +34,9 @@ import { WifilocService, LocalizationResult } from '../services/wifiloc.service'
 })
 export class LocalizePage implements OnInit, AfterViewInit {
   @ViewChild('coordsModal', { static: true }) coordsModal!: IonModal;
+  /**— for the "Select a Room" dropdown: —**/
+  public roomIds: string[] = [];         // e.g. ["U-1F-32", "U-1F-29", …]
+  public selectedRoom: string | null = null;
 
   //–– Modal fields
   public targetX: number | null = null;
@@ -43,14 +55,22 @@ export class LocalizePage implements OnInit, AfterViewInit {
   // Since the PNG is 600 DPI, scale each by 3:
   private readonly x0_px = 872;   // left‐bottom pixel (x0)
   private readonly y0_px = 2097   // left‐bottom pixel (y0)
-  private readonly y_end_px = 176;    // top‐end pixel (y_end)
+  private readonly xEnd_px = 3735;    // top‐end pixel (y_end)
+  private readonly yEnd_px = 167;    // top‐end pixel (y_end)
   private readonly x1 = 1510;
-  private readonly y1 = 2017;
+  private readonly y1 = 2016;
   private readonly x2 = 1628;
   private readonly y2 = 2016;
   private readonly pixPerM = Math.hypot(this.x2 - this.x1, this.y2 - this.y1) / 2.95;
   // (you can also hardcode the final pixPerM value from Python, e.g. 100 px/m etc.)
+  private gridStep = 0.5; // 1 m resolution
 
+  // The occupancy grid (once built):
+  private occupancyGrid: boolean[][] = [];
+
+  // Keep track of current/target *grid* indices:
+  private currentRC: [number, number] | null = null;
+  private targetRC: [number, number] | null = null;
   // These will be set once the image loads:
   private imageWidth = 1;
   private imageHeight = 1;
@@ -61,11 +81,11 @@ export class LocalizePage implements OnInit, AfterViewInit {
     private wifiService: WifilocService,
     private zone: NgZone,
     private plt: Platform,
-    // private deviceOrientation: DeviceOrientation
+    private deviceOrientation: DeviceOrientation
   ) { }
 
   ngOnInit() {
-    // no-op
+    this.roomIds = Object.keys(roomCenters).sort();
   }
 
 
@@ -73,17 +93,26 @@ export class LocalizePage implements OnInit, AfterViewInit {
     // 1) Preload the 600 dpi floor-plan PNG
     const img = new Image();
     img.src = 'assets/U1F_floorplan_with_2x2m_grid_600dpi2.png';
-    img.onload = () => {
+    img.onload = async () => {
       // only here is img.naturalWidth/naturalHeight available
       this.imageWidth = img.naturalWidth;
       this.imageHeight = img.naturalHeight;
-
+      // 3) Build the occupancy grid once and for all:
+      this.occupancyGrid = await buildOccupancyGrid(
+        'assets/U1F_floorplan_with_2x2m_grid_600dpi6.png',
+        this.x0_px,
+        this.y0_px,
+        this.xEnd_px,
+        this.yEnd_px,
+        this.pixPerM,
+        this.gridStep
+      );
       // 2) Create the Leaflet map in CRS.Simple
       this.map = L.map('map', {
         crs: L.CRS.Simple,
         zoom: 2,
         zoomSnap: 0.5,
-        minZoom: -2,
+        minZoom: -3,
         maxZoom: 4,
         zoomControl: true,
         attributionControl: false
@@ -96,22 +125,71 @@ export class LocalizePage implements OnInit, AfterViewInit {
 
       // 4) Place the image overlay and clamp the map’s bounds
       L.imageOverlay(
-        'assets/U1F_floorplan_with_2x2m_grid_600dpi2.png',
-        imageBounds
-      ).addTo(this.map);
-      this.targetLayer = L.layerGroup().addTo(this.map);
-      this.currentLayer = L.layerGroup().addTo(this.map);
-      this.routeLayer = L.polyline([], {
-        color: 'blue',
-        weight: 3,
-        opacity: 0.8,
-        smoothFactor: 1
-      }).addTo(this.map);
+        'assets/U1F_floorplan_with_2x2m_grid_600dpi2.png', imageBounds).addTo(this.map);
       this.map.setMaxBounds(imageBounds);
       this.map.fitBounds(imageBounds, { maxZoom: 2, animate: false });
 
-      // 5) Create a layer group for your “current position” red dot
-      
+      this.targetLayer = L.layerGroup().addTo(this.map);
+      this.currentLayer = L.layerGroup().addTo(this.map);
+      this.routeLayer = L.polyline([], {
+        color: 'blue', weight: 3,
+        opacity: 0.8, smoothFactor: 1
+      }).addTo(this.map);
+
+      // ***NOW draw the occupancy grid overlay:***
+      this.drawOccupancyOverlay();
+      this.locate();
+      // // 5) Create a layer group for your “current position” red dot
+
+      // // 1) After your map has been initialized and the floor plan overlay has been added,
+      // //    grab a reference to the “map pane” DOM element: grab the map pane DOM element
+      // const mapPane = this.map.getPane('mapPane');
+      // if (mapPane) {
+      //   // 2) Make sure its transform origin is the exact center (so it pivots around the middle)
+      //   mapPane.style.transformOrigin = '50% 50%';
+      // } else {
+      //   console.error('Leaflet map pane not found!');
+      // }
+
+
+      // // 7) Start listening to device heading → rotate map accordingly
+      // this.headingSubscription = this.deviceOrientation
+      //   .watchHeading({ frequency: 150 })
+      //   .subscribe((data: DeviceOrientationCompassHeading) => {
+      //     const heading = data.magneticHeading; // 0° = North
+
+      //     // // a) Rotate the map container so “north” remains up
+      //     // const mapContainer = this.map.getContainer();
+      //     // mapContainer.style.transformOrigin = "50% 50%";
+      //     // if (mapContainer) {
+      //     //   mapContainer.style.transform = `rotate(${-heading}deg)`;
+      //     // }
+      //     // else { console.error("Map container not found!") }
+      //     // // b) Counter‐rotate any markers (so they stay upright):
+
+      //       (mapPane as HTMLElement).style.transform = `rotate(${-heading}deg)`;
+      //     this.currentLayer.eachLayer((layer: any) => {
+      //       if (layer.getElement) {
+      //         const el = layer.getElement();
+      //         el.style.transformOrigin = "center center";
+      //         el.style.transform = `rotate(${heading}deg)`;
+      //       }
+      //     });
+      //     this.targetLayer.eachLayer((layer: any) => {
+      //       if (layer.getElement) {
+      //         const el = layer.getElement();
+      //         el.style.transformOrigin = "center center";
+      //         el.style.transform = `rotate(${heading}deg)`;
+      //       }
+      //     });
+
+      //     // c) If you later add a “compass arrow” marker, you can rotate it by +heading
+      //     //    so that it always points north relative to the rotated floorplan.
+      //   });
+
+      // Optionally, you could also immediately call this.drawOccupancyOverlay() here
+      // if you want to visualize all blocked cells as a faint red overlay.
+
 
       //   // 6) Create the compass‐arrow marker *after* the map is ready
       //   //    Now that this.map exists, `this.map.getCenter()` will return a valid LatLng.
@@ -148,7 +226,11 @@ export class LocalizePage implements OnInit, AfterViewInit {
       // };
     }
   }
-
+  ngOnDestroy() {
+    if (this.headingSubscription) {
+      this.headingSubscription.unsubscribe();
+    }
+  }
 
   /**
    * Called when the user clicks the “Locate” button.
@@ -173,7 +255,12 @@ export class LocalizePage implements OnInit, AfterViewInit {
       const latlng = this.map.unproject([pxNatX, pxNatY], 0);
 
       this.currentLatlng = latlng;
-
+      // Compute which grid‐cell row/column corresponds to (res.x, res.y):
+      const r = Math.round(res.y / this.gridStep);
+      const c = Math.round(res.x / this.gridStep);
+      this.currentRC = [r, c];
+      console.log('Computed currentRC =', this.currentRC,
+        'occupancy at that cell =', this.occupancyGrid[r][c]);
       console.log('Locate(): currentLatlng =', this.currentLatlng);
       if (this.targetLatlng) {
         console.log('Calling drawRoute() because targetLatlng is set');
@@ -236,7 +323,7 @@ export class LocalizePage implements OnInit, AfterViewInit {
       .addTo(this.map).bindPopup('2 m up');
   }
 
-  async goToCoords() {
+  async goToCoords(targetX?: number, targetY?: number) {
     if (this.targetX === null || this.targetY === null) {
       return;
     }
@@ -253,15 +340,20 @@ export class LocalizePage implements OnInit, AfterViewInit {
     console.log('GoToCoords: targetLatlng =', this.targetLatlng);
 
     // Draw a green marker for “target”
-    // (you could also use a different icon)
     this.targetLayer.clearLayers();
-    L.marker(latlng, {
-      icon: L.divIcon({
-        className: 'leaflet-marker-dot-green',
-        iconSize: [12, 12],
-        iconAnchor: [6, 6]
-      })
-    }).addTo(this.targetLayer);
+    // Compute the grid‐cell indices for the target (in meters):
+    const rt = Math.round(this.targetY / this.gridStep);
+    const ct = Math.round(this.targetX / this.gridStep);
+    this.targetRC = [rt, ct];
+    console.log('Computed targetRC =', this.targetRC,
+      'occupancy at that cell =', this.occupancyGrid[rt][ct]);
+
+    const greenIcon = L.divIcon({
+      className: 'leaflet-marker-dot-green',
+      iconSize: [12, 12],
+      iconAnchor: [6, 6]
+    });
+    L.marker(latlng, { icon: greenIcon }).addTo(this.targetLayer);
 
     // If we already have currentLatlng, draw route now:
     if (this.currentLatlng) {
@@ -285,18 +377,155 @@ export class LocalizePage implements OnInit, AfterViewInit {
    * Clears any previous route first.
    */
   private drawRoute() {
-    if (!this.currentLatlng || !this.targetLatlng) {
+    if (!this.currentLatlng || !this.targetLatlng || !this.currentRC || !this.targetRC) {
       return;
     }
-    // Clear old polyline
-    this.routeLayer.setLatLngs([]);
 
+    // Run A* on the occupancyGrid; returns a list of [r,c] steps
+    // const pathRC: Array<[number, number]> = astarGrid(
+    //   this.occupancyGrid,
+    //   this.currentRC,
+    //   this.targetRC
+    // );
+
+    const pathRC: Array<[number, number]> = dijkstraGrid(
+      this.occupancyGrid,
+      this.currentRC!,
+      this.targetRC!
+    );
+    // Clear old polyline
+    // Clear old route
+    // this.routeLayer.clearLayers();
+    this.routeLayer.setLatLngs([]);
+    if (pathRC.length === 0) {
+      alert('⚠️ No path found to target.');
+      return;
+    }
     // Set new polyline coordinates
-    this.routeLayer.setLatLngs([this.currentLatlng, this.targetLatlng]);
+    // this.routeLayer.setLatLngs([this.currentLatlng, this.targetLatlng]);
+    // Convert each [r,c] → Leaflet LatLng
+    const latlngs: L.LatLngExpression[] = pathRC.map(([r, c]) => {
+      const x_m = c * this.gridStep;
+      const y_m = r * this.gridStep;
+      const pxX = this.x0_px + x_m * this.pixPerM;
+      const pxY = this.y0_px - y_m * this.pixPerM;
+      return this.map.unproject([pxX, pxY], 0);
+    });
+
+    // Draw a blue polyline
+    this.routeLayer.setLatLngs(latlngs);
+    this.routeLayer.setStyle({
+      color: 'blue',
+      weight: 2,
+      opacity: 0.8
+    });
   }
   //   ngOnDestroy() {
   //   if (this.headingSubscription) {
   //     this.headingSubscription.unsubscribe();
   //   }
   // }
+  /**
+ * Overlay each occupancy cell as a tiny rectangle on the map.
+ * Blocked cells (false) will be drawn in semi-transparent red;
+ * free cells (true) can be left transparent (or drawn in light green).
+ */
+  private drawOccupancyOverlay(): void {
+    // 1) Figure out how many rows/cols the grid has:
+    const nRows = this.occupancyGrid.length;
+    if (nRows === 0) { return; }
+    const nCols = this.occupancyGrid[0].length;
+
+    // 2) Precompute the pixel‐size (in px) of one grid cell (one “gridStep” in meters):
+    //     gridStep is in meters → pixPerM is px per meter → cellWidthPx = pixPerM * gridStep
+    const cellPx = this.pixPerM * this.gridStep;
+
+    // 3) For each (r,c), if occupancyGrid[r][c] === false, draw a red rect.
+    //    We need the four corners of that cell in pixel space:
+    //
+    //    – In “native pixels” (at 600 dpi) the center‐pixel of cell (r,c) is:
+    //         pxCenterX = x0_px + (c * pixPerM * gridStep)
+    //         pxCenterY = y0_px - (r * pixPerM * gridStep)
+    //
+    //    – But we want to draw the full cell, so half‐width = cellPx/2:
+    //         left   = pxCenterX - (cellPx/2)
+    //         right  = pxCenterX + (cellPx/2)
+    //         top    = pxCenterY - (cellPx/2)
+    //         bottom = pxCenterY + (cellPx/2)
+    //
+    //    Note: Leaflet’s “unproject([pxX,pxY],0)” expects [pxX, pxY] measured from the TOP‐LEFT of the image.
+    //          In our convention, (0,0) at top‐left → pxY increases downward.  But our y0_px was computed
+    //          so that (0 m) is at pixel y0_px, and as r increases, y0_px − (r*pixPerM) moves up, etc.
+    //
+    //    Once we have (left, top) and (right, bottom) in native‐pixel coords, do:
+    //       let latlngTopLeft    = this.map.unproject([left,  top],    0);
+    //       let latlngBottomRight = this.map.unproject([right, bottom], 0);
+    //
+    //    And L.rectangle([[latlngTopLeft], [latlngBottomRight]], { fillColor: 'red', fillOpacity: 0.3, weight: 0 }).addTo(this.map).
+
+    for (let r = 0; r < nRows; r++) {
+      for (let c = 0; c < nCols; c++) {
+        // if this cell is blocked, draw a translucent red box:
+        if (!this.occupancyGrid[r][c]) {
+          // 3a) compute the center of the (r,c) cell in native‐pixel coordinates:
+          const pxCenterX = this.x0_px + c * cellPx;
+          const pxCenterY = this.y0_px - r * cellPx;
+
+          // 3b) half the cell‐width in px:
+          const halfCell = cellPx / 2;
+
+          // 3c) compute the four corners in “pixel from top‐left” coordinate:
+          const leftPx = pxCenterX - halfCell;
+          const rightPx = pxCenterX + halfCell;
+          const topPx = pxCenterY - halfCell;
+          const bottomPx = pxCenterY + halfCell;
+
+          // 3d) unproject those corners to Leaflet LatLng (zoom = 0):
+          const topLeftLatLng = this.map.unproject([leftPx, topPx], 0);
+          const bottomRightLatLng = this.map.unproject([rightPx, bottomPx], 0);
+
+          // 3e) draw a rectangle.  (If you want free cells in green, add an `else` block.)
+          const topLeft: L.LatLngTuple = [topLeftLatLng.lat, topLeftLatLng.lng];
+          const bottomRight: L.LatLngTuple = [bottomRightLatLng.lat, bottomRightLatLng.lng];
+
+          L.rectangle(
+            [topLeft, bottomRight],
+            {
+              color: '#ff0000',
+              weight: 0,
+              fillColor: '#ff0000',
+              fillOpacity: 0.3
+            }
+          ).addTo(this.map);
+        }
+      }
+    }
+  }
+
+  /**
+ * Called when user picks a room from the <ion-select>.
+ * We look up [x,y] = roomCenters[roomId], then call goToCoords(x, y).
+ */
+  public onRoomSelected(ev: any) {
+    const roomId: string = ev.detail.value;
+    if (!roomId) {
+      return;
+    }
+
+    // Lookup the [x,y] meters for that room
+    const center: [number, number] | undefined = roomCenters[roomId];
+    if (!center) {
+      alert(`No center coordinate found for room ${roomId}`);
+      return;
+    }
+    const [xMeters, yMeters] = center;
+
+    // Set the targetX/targetY and call your existing goToCoords logic
+    this.targetX = xMeters;
+    this.targetY = yMeters;
+    // If your “Go To X/Y” logic is inside goToCoords(), call it directly:
+    this.goToCoords();
+  }
+
+
 }
