@@ -45,10 +45,67 @@
 
 ion-header {
   /* this adds exactly the status-bar height on iOS/Android */
-  padding-top: env(safe-area-inset-top);
-  // background: var(--ion-color-primary);
+  // --background: transparent !important;
+  // --ion-color-base: transparent !important;
+  // background: transparent !important;
+  // box-shadow: none;
+  //env(safe-area-inset-top);
+  
+  // --background: transparent !important;
+  --ion-color-base: transparent;
+}
+ion-card {
+  /* this adds exactly the status-bar height on iOS/Android */
+  --background: rgba(248, 254, 255, 0.986) !important;
+  --ion-color-base: transparent !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  backdrop-filter: blur(10px); /* optional blur effect */
+} 
+
+// ion-header,
+// ion-toolbar {
+//   --background: rgba(255, 255, 255, 0.5) !important;
+//   background: rgba(255, 255, 255, 0.5) !important;
+//   backdrop-filter: blur(10px); /* optional blur effect */
+//   box-shadow: none;
+// }
+
+ion-toolbar {
+  /* override Ionic’s default toolbar background */
+  // --ion-toolbar-background-color: transparent !important;
+  --background: transparent;
+  // --ion-color-base: transparent !important;
+  --padding-top: 25px;
+  // --padding-bottom: 10px;
+  --background: transparent;
+  --color: rgb(0, 0, 0);
+  --padding: 1px;
 }
 
+ion-title.title-large {
+  // color: #c897d8;
+  font-size: 30px;
+  --color: #000;
+
+}
+
+// :host {
+//   ion-toolbar {
+//     --background: transparent;
+//     // --color: var(--ion-toolbar-color, var(--ion-text-color, #832f2f));
+//     --background: transparent;
+//     --border-color: #0e39b9;
+//     --padding-top: 0;
+//     --padding-bottom: 0;
+//     --padding-start: 0;
+//     --padding-end: 0;
+//     --min-height: 56px;
+//   }
+//     ion-header {
+//     --background: transparent;
+//   }
+// }
 
 .leaflet-marker-dot {
   width: 12px;
@@ -85,7 +142,8 @@ ion-header {
 
 #map {
   width: 100%;
-  height: calc(100% - 56px); /* 56px for header + ~56px for grid, adjust if needed */
+  height: calc(100% - 56px);
+  /* 56px for header + ~56px for grid, adjust if needed */
 }
 
 /* Red dot (current) */

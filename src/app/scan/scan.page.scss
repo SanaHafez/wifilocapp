@@ -1,0 +1,30 @@
+ion-content {
+  --background: none;
+  background-image: url("/assets/background/90689.jpg");
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+
+}
+
+ion-toolbar {
+  /* override Ionic’s default toolbar background */
+  // --ion-toolbar-background-color: transparent !important;
+  --background: rgb(253, 248, 236) !important;
+  
+  // --ion-color-base: transparent !important;
+  --padding-top: 25px;
+  --padding-bottom: 10px;
+
+  // --background: transparent;
+  --color: rgb(0, 0, 0);
+  --padding: 1px;
+}
+ion-item{
+  --background: rgb(253, 248, 236) !important;
+  --color: rgb(0, 0, 0);
+  --padding-top: 0px;
+  --padding-bottom: 0px;
+  --padding-start: 5px;
+  --padding-end: 0px;
+}

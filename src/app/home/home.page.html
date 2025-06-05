@@ -1,164 +1,40 @@
-<ion-header [translucent]="false">
+<ion-header  [translucent]="true">
   <ion-toolbar>
-    <ion-title>WiFi Fingerprinting</ion-title>
+    <ion-title class="ion-text-center" >Indoor Localization and Navigation</ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true" class="ion-padding">
-  <!-- <ion-item>
-    <ion-label position="floating">Room Name</ion-label>
-    <ion-input [(ngModel)]="roomName"></ion-input>
-  </ion-item>
-
-  <ion-item>
-    <ion-label position="floating">Floor</ion-label>
-    <ion-input type="number" [(ngModel)]="f"></ion-input>
-  </ion-item> -->
-
-  <!-- <ion-item>
-    <ion-label position="floating">X Coordinate</ion-label>
-    <ion-input type="number" [(ngModel)]="x"></ion-input>
-  </ion-item>
-
-  <ion-item>
-    <ion-label position="floating">Y Coordinate</ion-label>
-    <ion-input type="number" [(ngModel)]="y"></ion-input>
-  </ion-item> -->
-  <ion-grid>
-    <ion-row>
-      <ion-col size="6">
-        <ion-item>
-          <ion-label position="stacked">Room Name</ion-label>
-          <ion-input [(ngModel)]="roomName"></ion-input>
-        </ion-item>
-      </ion-col>
-      <ion-col size="6">
-        <ion-item>
-          <ion-label position="stacked">Floor</ion-label>
-          <ion-input type="number" [(ngModel)]="f"></ion-input>
-        </ion-item>
-      </ion-col>
-    </ion-row>
-  </ion-grid>
-
-  <ion-grid>
-    <ion-row>
-      <ion-col size="6">
-        <ion-item>
-          <ion-label position="stacked">X Coordinate (m)</ion-label>
-          <ion-input type="number" [(ngModel)]="x"></ion-input>
-        </ion-item>
-      </ion-col>
-      <ion-col size="6">
-        <ion-item>
-          <ion-label position="stacked">Y Coordinate (m)</ion-label>
-          <ion-input type="number" [(ngModel)]="y"></ion-input>
-        </ion-item>
-      </ion-col>
-    </ion-row>
-  </ion-grid>
-
-  <!-- <ion-item>
-    <ion-label position="floating">Total Scans</ion-label>
-    <ion-input type="number" [(ngModel)]="totalScans"></ion-input>
-  </ion-item> -->
 
 
-  <ion-grid>
-    <ion-row>
-      <ion-col size="6">
-        <ion-item>
-          <ion-label position="stacked">Total Scans</ion-label>
-          <ion-input type="number" [(ngModel)]="totalScans"></ion-input>
-        </ion-item>
-      </ion-col>
-      <ion-col size="6">
-        <ion-item>
-          <ion-label position="stacked">Scan Delay (ms)</ion-label>
-          <ion-input type="number" [(ngModel)]="scanDelay"></ion-input>
-        </ion-item>
-      </ion-col>
-    </ion-row>
-  </ion-grid>
-
-  <!-- <ion-grid>
-    <ion-row>
-      <ion-col size="6">
-        
-        <ion-button 
-          expand="block" 
-          [color]="isScanning ? 'danger' : 'primary'"
-          (click)="isScanning ? stopScanning() : startScanning()">
-          {{ isScanning ? 'Stop Scanning' : (isScanning === false ? 'Start Scanning' : '...') }}
-        </ion-button>
-      </ion-col>
-      <ion-col size="6">
-        <ion-button 
-          expand="block" 
-          color="success" 
-          (click)="saveJsonToFileDownloads()" 
-          [disabled]="isScanning">
-          Save Scan Results 
-        </ion-button>
-      </ion-col>
-    </ion-row>
-  </ion-grid> -->
-  
-          <!-- Show “Stop” if we’re scanning, otherwise “Start” -->
-          <ion-button 
-          expand="block" 
-          [color]="isScanning ? 'danger' : 'primary'"
-          (click)="isScanning ? stopScanning() : startScanning()">
-          {{ isScanning ? 'Stop Scanning' : (isScanning === false ? 'Start Scanning' : '...') }}
-        </ion-button>
-  
 <!-- 
-  <ion-item>
-    <ion-label position="floating">Scan Delay</ion-label>
-    <ion-input type="number" [(ngModel)]="scanDelay"></ion-input>
-  </ion-item> -->
-
-  <!-- <ion-button expand="block" (click)="startScanning()" [disabled]="isScanning">
-    {{ isScanning ? 'Scanning...' : 'Start Scanning at This Point' }}
-  </ion-button>
-  <ion-button expand="block" color="success" (click)="saveJsonToFileDownloads()" [disabled]="isScanning">
-    Save Dataset to Downloads Folder
-  </ion-button> -->
-
-    <!-- <ion-button expand="block" color="success" (click)="downloadJSON()" [disabled]="isScanning">
-    Download Dataset
-  </ion-button> -->
-
-  <!-- Live scan progress -->
-  <!-- <ion-list *ngIf="scanResultsList.length > 0">
-      <ion-item *ngFor="let scan of scanResultsList; let i = index">
-        <ion-label>
-          <h2>Scan {{i + 1}}/{{totalScans}}</h2>
-          <p>Found {{scan.wifi.length}} networks</p>
-        </ion-label>
-      </ion-item>
-    </ion-list> -->
-  <ion-item><ion-progress-bar *ngIf="isScanning" [value]="scanCount / totalScans" color="primary" buffer="1.0" >
-  </ion-progress-bar>
-  <ion-note slot="end">
-    {{ scanCount }}/{{ totalScans }}
-  </ion-note>
-</ion-item>
-
-
-
   <ion-button [routerLink]="['/localize']">Localization</ion-button>
 
-  <ion-button [routerLink]="['/scan']">Collect Data</ion-button>
+  <ion-button [routerLink]="['/scan']">Collect Data</ion-button> -->
+<ion-card  [routerLink]="['/scan']">
+  <img  class="my-card-img"
+  src="/assets/background/wifiscan.png" />
+  <ion-card-header>
+    <ion-card-title>Wi-Fi Scanning</ion-card-title>
+    <ion-card-subtitle>Collect Wi-Fi Fingerprinting Data</ion-card-subtitle>
+  </ion-card-header>
+
+  <!-- <ion-card-content>
+    Here's a small text description for the card content. Nothing more, nothing less.
+  </ion-card-content> -->
+</ion-card>
+
+<ion-card  [routerLink]="['/localize']">
+  <img class="my-card-img" 
+  src="/assets/background/map.png" />
+  <ion-card-header>
+    <ion-card-title>Wi-Fi Localization & Navigation</ion-card-title>
+    <ion-card-subtitle>Navigate to any location on the map</ion-card-subtitle>
+  </ion-card-header>
+
+</ion-card>
 
 
-  <ion-item *ngFor="let scan of scanResultsList; let i = index">
-    <ion-label>
-      <h2>Scan {{i + 1}}/{{totalScans}}</h2>
-      <p>Found {{scan.wifi.length}} networks</p>
-      <!-- <div *ngFor="let net of scan.wifi">
-        <small>{{net.ssid}} ({{net.rssi}} dBm)</small><br />
-      </div> -->
-    </ion-label>
-  </ion-item>
+
+
 </ion-content>

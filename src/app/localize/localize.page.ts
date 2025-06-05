@@ -92,14 +92,14 @@ export class LocalizePage implements OnInit, AfterViewInit {
   ngAfterViewInit() {
     // 1) Preload the 600 dpi floor-plan PNG
     const img = new Image();
-    img.src = 'assets/U1F_floorplan_with_2x2m_grid_600dpi2.png';
+    img.src = 'assets/floormap/U1F_floorplan_with_2x2m_grid_600dpi2.png';
     img.onload = async () => {
       // only here is img.naturalWidth/naturalHeight available
       this.imageWidth = img.naturalWidth;
       this.imageHeight = img.naturalHeight;
       // 3) Build the occupancy grid once and for all:
       this.occupancyGrid = await buildOccupancyGrid(
-        'assets/U1F_floorplan_with_2x2m_grid_600dpi6.png',
+        'assets/floormap/U1F_floorplan_with_2x2m_grid_600dpi6.png',
         this.x0_px,
         this.y0_px,
         this.xEnd_px,
@@ -110,7 +110,7 @@ export class LocalizePage implements OnInit, AfterViewInit {
       // 2) Create the Leaflet map in CRS.Simple
       this.map = L.map('map', {
         crs: L.CRS.Simple,
-        zoom: 2,
+        zoom: 3,
         zoomSnap: 0.5,
         minZoom: -3,
         maxZoom: 4,
@@ -125,9 +125,9 @@ export class LocalizePage implements OnInit, AfterViewInit {
 
       // 4) Place the image overlay and clamp the map’s bounds
       L.imageOverlay(
-        'assets/U1F_floorplan_with_2x2m_grid_600dpi2.png', imageBounds).addTo(this.map);
+        'assets/floormap/U1F_floorplan_with_2x2m_grid_600dpi2.png', imageBounds).addTo(this.map);
       this.map.setMaxBounds(imageBounds);
-      this.map.fitBounds(imageBounds, { maxZoom: 2, animate: false });
+      this.map.fitBounds(imageBounds, { maxZoom: 3, animate: false });
 
       this.targetLayer = L.layerGroup().addTo(this.map);
       this.currentLayer = L.layerGroup().addTo(this.map);

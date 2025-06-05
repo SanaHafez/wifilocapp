@@ -1,6 +1,9 @@
-<ion-header>
+<ion-header class="toolbar-up">
   <!-- First toolbar: the main title -->
   <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button default-href="/"></ion-back-button>
+    </ion-buttons>
     <ion-title>Wi-Fi Localization</ion-title>
   </ion-toolbar>
 
@@ -10,14 +13,16 @@
       <ion-row class="ion-align-items-center">
         <ion-col size="8">
           <ion-item lines="none" class="ion-no-padding">
-            <ion-label style="white-space: nowrap; font-size: 0.9rem; margin-right: 4px;">
-              Pick a Room:
+            <ion-label
+              style="white-space: nowrap; font-size: 0.9rem; margin-right: 4px"
+            >
+              Go to Room:
             </ion-label>
             <ion-select
               [(ngModel)]="selectedRoom"
               (ionChange)="onRoomSelected($event)"
               interface="popover"
-              style="--min-width: 120px; font-size: 0.9rem;"
+              style="--min-width: 120px; font-size: 0.9rem"
             >
               <ion-select-option *ngFor="let rId of roomIds" [value]="rId">
                 {{ rId }}
@@ -27,14 +32,13 @@
         </ion-col>
         <ion-col size="4">
           <ion-button id="open-coords" expand="block" size="small">
-            X/Y
+            Go to X/Y
           </ion-button>
         </ion-col>
       </ion-row>
     </ion-grid>
   </ion-toolbar>
 </ion-header>
-
 
 <ion-content>
   <!-- The full‐screen Leaflet container: -->
@@ -48,7 +52,6 @@
     </ion-select>
   </ion-item> -->
   <!-- Full-width buttons at top of content -->
-
 
   <ion-fab slot="fixed" vertical="bottom" horizontal="end">
     <ion-fab-button>
@@ -109,5 +112,5 @@
   </ion-modal>
 
   <!-- Leaflet map: fills remaining content area -->
-  <div id="map" style="height: calc(100% - 56px); width: 100%"></div>
+  <div id="map"></div>
 </ion-content>

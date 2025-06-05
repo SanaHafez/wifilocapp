@@ -6,9 +6,41 @@
     --padding-bottom: 0;
     --padding-start: 0;
     --padding-end: 0;
+    background-image: url("/assets/background/rm183-kul-32.jpg");
+   
+ 
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
   }
 }
 
+ion-toolbar {
+  /* override Ionic’s default toolbar background */
+  // --ion-toolbar-background-color: transparent !important;
+  --background: rgb(252, 248, 242) !important;
+  padding-top: 0%;
+  padding-bottom: 0%;
+}
+
+ion-button {
+  --background: rgb(87, 176, 248);
+  --color: #000;
+  --padding-top: 0px;
+  --padding-bottom: 0px;
+  --padding-start: 5px;
+  --padding-end: 0px;
+  --webkit-margin-start: 15px;
+}
+ion-item {
+  --background: rgb(255, 253, 251) !important;
+  --color: rgb(0, 0, 0);
+  --padding-top: 0px;
+  --padding-bottom: 0px;
+  --padding-start: 5px;
+  --padding-end: 0px;
+  --webkit-margin-start: 10px;
+}
 /* localize.page.scss */
 // .leaflet-marker-dot {
 //   width: 12px;
@@ -33,7 +65,7 @@
 #mapWrapper {
   position:absolute;
   top:0; bottom:0; left:0; right:0;
-  overflow:hidden;
+  overflow:visible;
 }
 #panContainer {
   display:inline-block;
@@ -69,7 +101,12 @@ img {
 /* localize.page.scss */
 #map {
   width: 100%;
-  height: calc(100% - 56px); /* header (56px) + button row (~56px) */
+  height: 100%; //calc(100% - 0px); /* header (56px) + button row (~56px) */
+  background-image: url("/assets/background/rm183-kul-32.jpg");
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+  position: relative; /* needed for absolute positioning of markers */
 }
 .leaflet-marker-dot,
 .leaflet-marker-dot-green {
@@ -93,12 +130,20 @@ img {
 /* 1a) Allow the map container to show rotated corners */
 .leaflet-container {
   overflow: visible !important;
+  height: 100%;
 }
 
 /* 1b) Also allow the parent of #map (ionic-content) to show overflow if needed */
+.toolbar‐up {
+  
+  --min-height: 20px;     /* Shrink this toolbar’s height */
+  --max-height: 40px;
+}
 
 .toolbar‐small {
-  --min-height: 40px;     /* Shrink this toolbar’s height */
+  padding-top: 0px;
+  --padding-top: 0px;
+  --min-height: 20px;     /* Shrink this toolbar’s height */
   --max-height: 40px;
 }
 
