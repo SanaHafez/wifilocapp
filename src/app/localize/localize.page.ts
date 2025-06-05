@@ -34,7 +34,7 @@ export class LocalizePage implements OnInit, AfterViewInit {
   private map!: L.Map;
   private currentLayer!: L.LayerGroup;   // holds “current” (red) marker
   private targetLayer!: L.LayerGroup;    // holds “target” (green) marker
-  private routeLine!: L.Polyline;        // still holds the blue route
+  private routeLayer!: L.Polyline;        // still holds the blue route
 
   private compassMarker!: L.Marker;        // ← the rotating arrow
   private headingSubscription: any;
@@ -72,7 +72,7 @@ export class LocalizePage implements OnInit, AfterViewInit {
   ngAfterViewInit() {
     // 1) Preload the 600 dpi floor-plan PNG
     const img = new Image();
-    img.src = 'assets/U1F_floorplan_with_2x2m_grid_600dpi.png';
+    img.src = 'assets/U1F_floorplan_with_2x2m_grid_600dpi2.png';
     img.onload = () => {
       // only here is img.naturalWidth/naturalHeight available
       this.imageWidth = img.naturalWidth;
@@ -96,12 +96,12 @@ export class LocalizePage implements OnInit, AfterViewInit {
 
       // 4) Place the image overlay and clamp the map’s bounds
       L.imageOverlay(
-        'assets/U1F_floorplan_with_2x2m_grid_600dpi.png',
+        'assets/U1F_floorplan_with_2x2m_grid_600dpi2.png',
         imageBounds
       ).addTo(this.map);
       this.targetLayer = L.layerGroup().addTo(this.map);
       this.currentLayer = L.layerGroup().addTo(this.map);
-      this.routeLine = L.polyline([], {
+      this.routeLayer = L.polyline([], {
         color: 'blue',
         weight: 3,
         opacity: 0.8,
@@ -289,10 +289,10 @@ export class LocalizePage implements OnInit, AfterViewInit {
       return;
     }
     // Clear old polyline
-    this.routeLine.setLatLngs([]);
+    this.routeLayer.setLatLngs([]);
 
     // Set new polyline coordinates
-    this.routeLine.setLatLngs([this.currentLatlng, this.targetLatlng]);
+    this.routeLayer.setLatLngs([this.currentLatlng, this.targetLatlng]);
   }
   //   ngOnDestroy() {
   //   if (this.headingSubscription) {
