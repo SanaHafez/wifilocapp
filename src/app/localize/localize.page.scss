@@ -18,19 +18,23 @@
 ion-toolbar {
   /* override Ionic’s default toolbar background */
   // --ion-toolbar-background-color: transparent !important;
-  --background: rgb(252, 248, 242) !important;
+  --background: rgb(252, 242, 229) !important;
   padding-top: 0%;
   padding-bottom: 0%;
 }
 
 ion-button {
-  --background: rgb(87, 176, 248);
-  --color: #000;
-  --padding-top: 0px;
-  --padding-bottom: 0px;
-  --padding-start: 5px;
+  --background: rgb(0, 118, 228);
+  --color: #ffffff;
+  --padding-top: 10px;
+  --padding-bottom: 10px;
+  --padding-start: 0px;
   --padding-end: 0px;
   --webkit-margin-start: 15px;
+}
+
+ion-fab {
+  --background: rgb(0, 118, 228);
 }
 ion-item {
   --background: rgb(255, 253, 251) !important;
@@ -40,6 +44,9 @@ ion-item {
   --padding-start: 5px;
   --padding-end: 0px;
   --webkit-margin-start: 10px;
+}
+.pad-item {
+  padding-top: 20px !important;
 }
 /* localize.page.scss */
 // .leaflet-marker-dot {

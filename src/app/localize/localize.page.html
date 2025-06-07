@@ -54,8 +54,10 @@
   <!-- Full-width buttons at top of content -->
 
   <ion-fab slot="fixed" vertical="bottom" horizontal="end">
-    <ion-fab-button>
-      <ion-icon name="locate-outline" (click)="locate()"></ion-icon>
+    <ion-fab-button  [color]="isTracking ? 'primary' : 'danger'"  
+    (click)="toggleTracking()"
+    >
+      <ion-icon name="locate-outline"></ion-icon>
     </ion-fab-button>
   </ion-fab>
   <!-- Sheet modal for entering target X,Y -->
@@ -76,27 +78,60 @@
         </ion-toolbar>
       </ion-header>
 
-      <ion-content class="ion-padding">
+      <ion-content >
         <form (ngSubmit)="goToCoords(); coordsModal.dismiss()" novalidate>
-          <ion-item>
-            <ion-label position="stacked">X (meters)</ion-label>
-            <ion-input
-              type="number"
-              [(ngModel)]="targetX"
-              name="targetX"
-              required
-            ></ion-input>
-          </ion-item>
-
-          <ion-item class="ion-margin-top">
-            <ion-label position="stacked">Y (meters)</ion-label>
-            <ion-input
-              type="number"
-              [(ngModel)]="targetY"
-              name="targetY"
-              required
-            ></ion-input>
-          </ion-item>
+          <ion-grid>
+            <ion-row>
+              <ion-col size="6">
+                <ion-item >
+                  <ion-label position="stacked">X (meters)</ion-label>
+                  <ion-input
+                    type="number"
+                    [(ngModel)]="targetX"
+                    name="targetX"
+                    required
+                  ></ion-input>
+                </ion-item>
+              </ion-col>
+              <ion-col size="6">
+                <ion-item >
+                  <ion-label position="stacked">Y (meters)</ion-label>
+                  <ion-input
+                    type="number"
+                    [(ngModel)]="targetY"
+                    name="targetY"
+                    required
+                  >
+                  </ion-input>
+                </ion-item>
+              </ion-col>
+            </ion-row>
+            <ion-row>
+              <ion-col size="6">
+                <ion-item>
+                  <ion-label position="stacked">Current Room:</ion-label>
+                  <span
+                    class="pad-item"
+                    *ngIf="currentRoom; else noRoom">
+                    {{ currentRoom }}
+                  </span>
+                  <ng-template #noRoom>-</ng-template>
+                </ion-item>
+              </ion-col>
+              <ion-col size="6">
+                <ion-item>
+                  <ion-label position="stacked">Current Coords:</ion-label>
+                  <span class="pad-item"
+                    *ngIf="currentX !== null && currentY !== null; else noCoords"
+                  >
+                    {{ currentX| number:'1.2-2' }}, {{ currentY |
+                    number:'1.2-2'}}
+                  </span>
+                  <ng-template #noCoords>-</ng-template>
+                </ion-item>
+              </ion-col>
+            </ion-row>
+          </ion-grid>
 
           <ion-button
             expand="block"

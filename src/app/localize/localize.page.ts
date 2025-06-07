@@ -77,6 +77,11 @@ export class LocalizePage implements OnInit, AfterViewInit {
   //–– Store current and target latlngs for routing
   private currentLatlng: L.LatLng | null = null;
   private targetLatlng: L.LatLng | null = null;
+  currentRoom!: string;
+  currentX: number | undefined;
+  currentY: number | undefined;
+  isTracking = false;
+  private trackingHandle: any;  // holds interval ID
   constructor(
     private wifiService: WifilocService,
     private zone: NgZone,
@@ -226,9 +231,27 @@ export class LocalizePage implements OnInit, AfterViewInit {
       // };
     }
   }
+
+   toggleTracking() {
+    if (this.isTracking) {
+      // stop
+      clearInterval(this.trackingHandle);
+      this.isTracking = false;
+    } else {
+      // start
+      this.isTracking = true;
+      this.locate(); // do one immediately
+      this.trackingHandle = setInterval(() => {
+        this.locate();
+      }, 2000); // adjust the interval as you wish
+    }
+  }
   ngOnDestroy() {
     if (this.headingSubscription) {
       this.headingSubscription.unsubscribe();
+    }
+     if (this.trackingHandle) {
+      clearInterval(this.trackingHandle);
     }
   }
 
@@ -248,6 +271,9 @@ export class LocalizePage implements OnInit, AfterViewInit {
       //   pixelY = y0_px − (res.y × pixPerM)
       const pxNatX = this.x0_px + res.x * this.pixPerM;
       const pxNatY = this.y0_px - res.y * this.pixPerM;
+      this.currentRoom = res.room;
+      this.currentX = res.x;
+      this.currentY = res.y;
 
       console.log(`→ pixel coordinates = (${pxNatX.toFixed(1)}, ${pxNatY.toFixed(1)})`);
 
@@ -284,7 +310,7 @@ export class LocalizePage implements OnInit, AfterViewInit {
     }
     catch (err: any) {
       console.error('Localization error:', err);
-      alert('Localization failed: ' + (err.message || err));
+      // alert('Localization failed: ' + (err.message || err));
     }
   }
 
