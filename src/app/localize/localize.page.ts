@@ -104,7 +104,7 @@ export class LocalizePage implements OnInit, AfterViewInit {
       this.imageHeight = img.naturalHeight;
       // 3) Build the occupancy grid once and for all:
       this.occupancyGrid = await buildOccupancyGrid(
-        'assets/floormap/U1F_floorplan_with_2x2m_grid_600dpi6.png',
+        'assets/floormap/U1F_floorplan_with_2x2m_grid_600dpi8.png',
         this.x0_px,
         this.y0_px,
         this.xEnd_px,
@@ -137,7 +137,7 @@ export class LocalizePage implements OnInit, AfterViewInit {
       this.targetLayer = L.layerGroup().addTo(this.map);
       this.currentLayer = L.layerGroup().addTo(this.map);
       this.routeLayer = L.polyline([], {
-        color: 'blue', weight: 3,
+        color: 'green', weight: 4,
         opacity: 0.8, smoothFactor: 1
       }).addTo(this.map);
 
@@ -232,7 +232,7 @@ export class LocalizePage implements OnInit, AfterViewInit {
     }
   }
 
-   toggleTracking() {
+  toggleTracking() {
     if (this.isTracking) {
       // stop
       clearInterval(this.trackingHandle);
@@ -250,7 +250,7 @@ export class LocalizePage implements OnInit, AfterViewInit {
     if (this.headingSubscription) {
       this.headingSubscription.unsubscribe();
     }
-     if (this.trackingHandle) {
+    if (this.trackingHandle) {
       clearInterval(this.trackingHandle);
     }
   }
@@ -441,9 +441,9 @@ export class LocalizePage implements OnInit, AfterViewInit {
     // Draw a blue polyline
     this.routeLayer.setLatLngs(latlngs);
     this.routeLayer.setStyle({
-      color: 'blue',
-      weight: 2,
-      opacity: 0.8
+      color: '#8D11CE',
+      weight: 3,
+      opacity: 0.8,
     });
   }
   //   ngOnDestroy() {
@@ -517,9 +517,9 @@ export class LocalizePage implements OnInit, AfterViewInit {
           L.rectangle(
             [topLeft, bottomRight],
             {
-              color: '#ff0000',
+              // color: '#FFA76C',
               weight: 0,
-              fillColor: '#ff0000',
+              fillColor: '#FFAF78',
               fillOpacity: 0.3
             }
           ).addTo(this.map);
