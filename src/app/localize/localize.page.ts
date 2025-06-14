@@ -23,7 +23,7 @@ import { astarGrid } from '../utils/astar';
 import { dijkstraGrid } from '../utils/dijkstraGrid';
 
 import { buildOccupancyGrid } from '../utils/occupancy';
-import { DeviceOrientation, DeviceOrientationCompassHeading } from '@awesome-cordova-plugins/device-orientation/ngx';
+// import { DeviceOrientation, DeviceOrientationCompassHeading } from '@awesome-cordova-plugins/device-orientation/ngx';
 
 @Component({
   selector: 'app-localize',
@@ -86,7 +86,7 @@ export class LocalizePage implements OnInit, AfterViewInit {
     private wifiService: WifilocService,
     private zone: NgZone,
     private plt: Platform,
-    private deviceOrientation: DeviceOrientation
+    // private deviceOrientation: DeviceOrientation
   ) { }
 
   ngOnInit() {
@@ -243,7 +243,7 @@ export class LocalizePage implements OnInit, AfterViewInit {
       this.locate(); // do one immediately
       this.trackingHandle = setInterval(() => {
         this.locate();
-      }, 2000); // adjust the interval as you wish
+      }, 1000); // adjust the interval as you wish
     }
   }
   ngOnDestroy() {

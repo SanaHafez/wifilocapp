@@ -38,7 +38,7 @@ import { WifiWizard2 } from '@awesome-cordova-plugins/wifi-wizard-2/ngx';
 import { Insomnia }  from '@awesome-cordova-plugins/insomnia/ngx';
 import { AndroidPermissions } from '@awesome-cordova-plugins/android-permissions/ngx';
 import { HttpClientModule } from '@angular/common/http';
-import { DeviceOrientation } from '@awesome-cordova-plugins/device-orientation/ngx';
+// import { DeviceOrientation } from '@awesome-cordova-plugins/device-orientation/ngx';
 
 @NgModule({
   declarations: [AppComponent],
@@ -54,7 +54,7 @@ import { DeviceOrientation } from '@awesome-cordova-plugins/device-orientation/n
     WifiWizard2,
     Insomnia,
     AndroidPermissions,
-    DeviceOrientation
+    // DeviceOrientation
   ],
   bootstrap: [AppComponent],
 })
