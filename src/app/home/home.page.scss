@@ -25,3 +25,38 @@
 #container a {
   text-decoration: none;
 }
+
+ion-content {
+  --background: none;
+  background-image: url("/assets/background/bluebg.jpg");
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+}
+// ion-header {
+//   --background: #ffffff00;
+//   --color: white;
+
+//   // --border-color: #f24aec;
+//   // --border-width: 4px 0;
+//   // --border-style: double;
+
+//   --min-height: 80px;
+//   --padding-top: 20px;
+//   --padding-bottom: 20px;
+// }
+ion-toolbar {
+  /* override Ionic’s default toolbar background */
+  --ion-toolbar-background-color: transparent !important;
+   --padding-top:50px;
+   --padding-bottom: 10px;
+  --background: rgb(233, 244, 253) !important;
+}
+.my-card-img {
+  width: 90%;            /* let it fill 90% of the card’s width */
+  max-height: 225px;     /* limit its height */
+  height: auto;          /* keep aspect ratio */
+  object-fit: contain;   /* no distortion, letterbox/pillarbox if needed */
+  display: block;        /* make the img a block‐level element */
+  margin: 0 auto;        /* center it horizontally */
+}

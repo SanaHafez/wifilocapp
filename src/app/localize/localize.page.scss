@@ -1,0 +1,191 @@
+/* src/app/localize/localize.page.scss */
+
+:host {
+  ion-content {
+    --padding-top: 0;
+    --padding-bottom: 0;
+    --padding-start: 0;
+    --padding-end: 0;
+    background-image: url("/assets/background/rm183-kul-32.jpg");
+   
+ 
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+  }
+}
+
+ion-toolbar {
+  /* override Ionic’s default toolbar background */
+  // --ion-toolbar-background-color: transparent !important;
+  --background: rgb(252, 242, 229) !important;
+  padding-top: 0%;
+  padding-bottom: 0%;
+}
+
+ion-button {
+  --background: rgb(0, 118, 228);
+  --color: #ffffff;
+  --padding-top: 10px;
+  --padding-bottom: 10px;
+  --padding-start: 0px;
+  --padding-end: 0px;
+  --webkit-margin-start: 15px;
+}
+
+ion-fab {
+  --background: rgb(0, 118, 228);
+}
+ion-item {
+  --background: rgb(255, 253, 251) !important;
+  --color: rgb(0, 0, 0);
+  --padding-top: 0px;
+  --padding-bottom: 0px;
+  --padding-start: 5px;
+  --padding-end: 0px;
+  --webkit-margin-start: 10px;
+}
+.pad-item {
+  padding-top: 20px !important;
+}
+/* localize.page.scss */
+// .leaflet-marker-dot {
+//   width: 12px;
+//   height: 12px;
+//   background: red;
+//   border-radius: 50%;
+//   pointer-events: none;
+// }
+// .leaflet‐marker‐dot {
+//   width: 12px;
+//   height: 12px;
+//   background: red;
+//   border: 2px solid white;    /* optional white border so it stands out */
+//   border-radius: 50%;
+//   box-shadow: 0 0 4px rgba(0,0,0,0.3);
+//   /* ensure it’s centered exactly at the “tip” of the icon: */
+//   transform: translate(-50%, -50%);
+//   pointer-events: none;
+// }
+
+/* This makes the wrapper fill the whole screen and hide overflow */
+#mapWrapper {
+  position:absolute;
+  top:0; bottom:0; left:0; right:0;
+  overflow:visible;
+}
+#panContainer {
+  display:inline-block;
+  position:relative;
+}
+img {
+  display:block;
+  max-width:none;
+  user-select:none;
+  -webkit-user-drag:none;
+}
+/* Ensure the image never scales on its own except via Panzoom. */
+.floor-image {
+  display: block;
+  max-width: none; 
+  user-select: none; 
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+
+/* The little red circle that marks your computed position. */
+.marker-dot {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: red;
+  border-radius: 50%;
+  transform: translate(-50%, -50%); /* center the dot exactly at (left,top) */
+  pointer-events: none;
+  z-index: 10; /* make sure it’s above the image */
+}
+
+/* localize.page.scss */
+#map {
+  width: 100%;
+  height: 100%; //calc(100% - 0px); /* header (56px) + button row (~56px) */
+  background-image: url("/assets/background/rm183-kul-32.jpg");
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+  position: relative; /* needed for absolute positioning of markers */
+}
+.leaflet-marker-dot,
+.leaflet-marker-dot-green {
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  margin-top: -6px;
+}
+.leaflet-marker-dot {
+  background-color: red;
+  border-radius: 50%;
+  opacity: 0.9;
+}
+
+.leaflet-marker-dot-green {
+  background-color: limegreen;
+  border-radius: 50%;
+  opacity: 0.9;
+}
+
+/* 1a) Allow the map container to show rotated corners */
+.leaflet-container {
+  overflow: visible !important;
+  height: 100%;
+}
+
+/* 1b) Also allow the parent of #map (ionic-content) to show overflow if needed */
+.toolbar‐up {
+  
+  --min-height: 20px;     /* Shrink this toolbar’s height */
+  --max-height: 40px;
+}
+
+.toolbar‐small {
+  padding-top: 0px;
+  --padding-top: 0px;
+  --min-height: 20px;     /* Shrink this toolbar’s height */
+  --max-height: 40px;
+}
+
+// Optional: reduce padding on ion-item inside the small toolbar
+ion-item.toolbar‐small {
+  --inner-padding-top: 0;
+  --inner-padding-bottom: 0;
+}
+
+// .map-wrapper {
+//   position: relative;
+//   width: 100%;
+//   height: 100%;
+//   overflow: hidden;
+// }
+
+// .pan-container {
+//   position: relative;
+//   width: 100%;
+//   height: 100%;
+//   touch-action: none; /* so panzoom can capture gestures */
+// }
+
+// .floor-image {
+//   display: block;
+//   max-width: 100%;
+//   height: auto;
+//   user-select: none;
+//   -webkit-user-drag: none;
+// }
+
+// .marker {
+//   position: absolute;
+//   left: 0;
+//   top: 0;
+//   font-size: 24px;
+//   pointer-events: none;
+// }

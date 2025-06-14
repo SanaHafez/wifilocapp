@@ -2,7 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { Platform , AlertController } from '@ionic/angular';
 import { File } from '@awesome-cordova-plugins/file/ngx';
 import { Insomnia } from '@awesome-cordova-plugins/insomnia/ngx';
-// import { AndroidPermissions } from '@ionic-native/android-permissions/ngx';
+import { Geolocation } from '@capacitor/geolocation';
+import { Filesystem, Directory, Encoding,ReadFileResult  } from '@capacitor/filesystem';
 declare var WifiWizard2: any;
 
 @Component({
@@ -14,43 +15,45 @@ declare var WifiWizard2: any;
 
 export class HomePage implements OnInit {
   isDeviceReady = false;
-  roomName: string = '';
+  roomName: string = 'U-1F-';
   x: number = 1;
   y: number = 1;
   f: number = 1;
   scanCount: number = 0;
-  totalScans: number = 30;
+  totalScans: number = 50;
   isScanning: boolean = false;
   scanResultsList: any[] = [];
-  scanDelay: number = 10000
+  scanDelay: number = 2000
+  shouldStop:boolean = false;
 
-  collectedData: any[] = [];
+  // collectedData: any[] = [];
 
 
   constructor(private platform: Platform,
     private alertCtrl: AlertController,
     private file: File,
-    private insomnia: Insomnia    
+    private insomnia: Insomnia,
+    // private androidPermissions: any
   ) {}
 
-  ngOnInit() {
-    this.platform.ready().then(() => {
+  async ngOnInit() {
+    this.platform.ready().then(async () => {
       console.log('Platform ready');
       this.isDeviceReady = true;
-      // this.androidPermissions.checkPermission(this.androidPermissions.PERMISSION.ACCESS_FINE_LOCATION).then(
-      //   result => {
-      //     if (!result.hasPermission) {
-      //       this.androidPermissions.requestPermission(this.androidPermissions.PERMISSION.ACCESS_FINE_LOCATION);
-      //     }
-      //   },
-      //   err => this.androidPermissions.requestPermission(this.androidPermissions.PERMISSION.ACCESS_FINE_LOCATION)
-      // );
+  // Request location permission via the Geolocation plugin
+     const perm = await Geolocation.requestPermissions();
+     // perm.location can be 'granted' | 'denied' | 'prompt'
+     if (perm.location !== 'granted') {
+       console.warn('Location permission denied');
+       return;
+     }
       
       WifiWizard2.startScan();
       
     });
   }
   async scan() {
+    this.shouldStop = false;
     if (!this.isDeviceReady) {
       console.log('Device not ready or running in browser');
       return;
@@ -73,11 +76,19 @@ export class HomePage implements OnInit {
     }
   }
 
+  stopScanning() {
+    // signal the loop to break
+    this.shouldStop = true;
+    // this.collectedData=[];
+    this.scanResultsList=[];
+  }
+
   async startScanning() {
     if (!this.roomName || isNaN(this.x) || isNaN(this.y)) {
       alert('Please enter Room Name, X and Y coordinates first.');
       return;
     }
+    this.shouldStop = false;
 
     try {
       await this.insomnia.keepAwake();
@@ -93,14 +104,15 @@ export class HomePage implements OnInit {
     this.scanCount = 0;
     this.isScanning = true;
 
-    this.collectedData = []; // Clear previous data this is added later...
-    // this.scanResultsList = [];
+    // this.collectedData = []; // Clear previous data this is added later...
+    this.scanResultsList = [];
     await this.scanLoop();
+    if (!this.shouldStop){this.saveJsonToFileDownloads()}
   }
 
   async scanLoop() {
     this.scanResultsList = [];
-    while (this.scanCount < this.totalScans) {
+    while ( !this.shouldStop && this.scanCount < this.totalScans) {
       try {
         const networks = await WifiWizard2.scan();
         console.log(`Scan ${this.scanCount + 1} completed`, networks);
@@ -118,20 +130,20 @@ export class HomePage implements OnInit {
           room: this.roomName,
           x: this.x,
           y: this.y,
-          f: this.f,
+          floor: this.f,
           scanNumber: this.scanCount + 1,
           timestamp: new Date().toISOString(), // Add timestamp
           wifi: wifiList
         };
 
-        this.collectedData.push(entry);
+        // this.collectedData.push(entry);
         this.scanResultsList.push(entry);
 
         this.scanCount++;
 
         // Wait 20 seconds between scans (recommended so WiFi has time to refresh)
         // await this.delay(30000);
-        if (this.scanCount < this.totalScans) {
+        if (this.scanCount < this.totalScans && !this.shouldStop) {
           // Only delay if more scans remain
           await this.delay(this.scanDelay);
         }
@@ -149,21 +161,89 @@ export class HomePage implements OnInit {
     }
 
     this.isScanning = false;
-    alert('Scans completed for this location!');
+    // alert('Scans completed for this location!');
     
     try {
       await this.insomnia.allowSleepAgain();
     } catch (err) {
       console.warn('Insomnia plugin failed:', err);
     }
+    if (this.shouldStop){this.scanResultsList = [];}
+    alert(this.shouldStop 
+      ? 'Scanning stopped.' 
+      : 'All scans completed!');
   }
 
   delay(ms: number) {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
+  
+async saveJsonToFileDownloads() {
+  const fileName = 'wifi_dataset.json';
+  const newData  = this.scanResultsList;
+
+  try {
+    // Try to read the existing file
+    const read: ReadFileResult = await Filesystem.readFile({
+      path:      fileName,
+      directory: Directory.Documents,
+      encoding:  Encoding.UTF8 
+    });
+
+    // Normalize data to string
+    let text = typeof read.data === 'string'
+      ? read.data
+      : await read.data.text();
+
+    // Parse with fallback on error
+    let oldArray: any[];
+    try {
+      oldArray = JSON.parse(text);
+      if (!Array.isArray(oldArray)) {
+        console.warn('Existing file is not an array—overwriting.');
+        oldArray = [];
+      }
+    } catch (parseErr) {
+      console.warn('Could not parse existing JSON—overwriting.', parseErr);
+      oldArray = [];
+    }
+
+    // Merge & write back
+    const merged = oldArray.concat(newData);
+    await Filesystem.writeFile({
+      path:      fileName,
+      directory: Directory.Documents,
+      data:      JSON.stringify(merged, null, 2),
+      encoding:  Encoding.UTF8,
+    });
+    alert('✅ Appended to wifi_dataset.json in Documents');
+  }
+  catch (err: any) {
+    // If the file doesn’t exist, create it fresh
+    if (err.message?.includes('File does not exist')) {
+      try {
+        await Filesystem.writeFile({
+          path:      fileName,
+          directory: Directory.Documents,
+          data:      JSON.stringify(newData, null, 2),
+          encoding:  Encoding.UTF8,
+        });
+        alert('✅ Created wifi_dataset.json in Documents');
+      } catch (writeErr: any) {
+        console.error('Write failed:', writeErr);
+        alert('❌ Failed to create file: ' + writeErr.message);
+      }
+    } else {
+      console.error('Read failed:', err);
+      alert('❌ Failed to read existing file: ' + err.message);
+    }
+  }
+}
+
+  
   downloadJSON() {
-    const blob = new Blob([JSON.stringify(this.collectedData, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(this.scanResultsList, null, 2)], { type: 'application/json' });
     const url = window.URL.createObjectURL(blob);
 
     const a = document.createElement('a');
@@ -174,7 +254,7 @@ export class HomePage implements OnInit {
   }
   saveJsonToFile() {
     const fileName = 'wifi_dataset.json';
-    const data = JSON.stringify(this.collectedData, null, 2);
+    const data = JSON.stringify(this.scanResultsList, null, 2);
   
     this.file.writeFile(this.file.dataDirectory, fileName, data, { replace: true })
       .then(() => {
@@ -186,52 +266,4 @@ export class HomePage implements OnInit {
         alert('Failed to save file.');
       });}
 
-  async saveJsonToFileDownloads() {
-    // const fileName = 'wifi_dataset.json';
-    // const data = JSON.stringify(this.collectedData, null, 2);
-  
-    // this.file.writeFile(this.file.externalRootDirectory + 'Download/', fileName, data, { replace: true })
-    //   .then(() => {
-    //     console.log('File saved successfully in Downloads folder');
-    //     alert('Dataset saved in Downloads folder!');
-    //   })
-    //   .catch(err => {
-    //     console.error('Error saving file:', err);
-    //     alert('Failed to save file.');
-    //   });  }
-    const fileName = 'wifi_dataset.json';
-    const path = this.file.externalRootDirectory + 'Download/'; // Saving in Downloads folder
-    const newData = this.collectedData;
-
-    try {
-      // Check if file exists first
-      const exists = await this.file.checkFile(path, fileName);
-
-      if (exists) {
-        // ✅ File exists: Read old data
-        const oldContent = await this.file.readAsText(path, fileName);
-        const oldData = JSON.parse(oldContent);
-
-        // ✅ Merge old data + new data
-        const mergedData = oldData.concat(newData);
-
-        // ✅ Save merged data back
-        await this.file.writeFile(path, fileName, JSON.stringify(mergedData, null, 2), { replace: true });
-
-        console.log('New data appended to existing JSON file!');
-        alert('New data appended to dataset!');
-      }
-
-    } catch (error) {
-      if ((error as any).code === 1) { // ✅ File not found
-        // ✅ Create new file
-        await this.file.writeFile(path, fileName, JSON.stringify(newData, null, 2), { replace: true });
-        console.log('New file created and data saved!');
-        alert('Dataset file created!');
-      } else {
-        console.error('Error saving file:', error);
-        alert('Failed to save file.');
-      }
-    }
-  }
 }

@@ -1,0 +1,151 @@
+<ion-header class="toolbar-up">
+  <!-- First toolbar: the main title -->
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button default-href="/"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Wi-Fi Localization</ion-title>
+  </ion-toolbar>
+
+  <!-- Second toolbar: room picker + X/Y button -->
+  <ion-toolbar mode="ios" class="toolbar‐small">
+    <ion-grid class="ion-no-padding">
+      <ion-row class="ion-align-items-center">
+        <ion-col size="8">
+          <ion-item lines="none" class="ion-no-padding">
+            <ion-label
+              style="white-space: nowrap; font-size: 0.9rem; margin-right: 4px"
+            >
+              Go to Room:
+            </ion-label>
+            <ion-select
+              [(ngModel)]="selectedRoom"
+              (ionChange)="onRoomSelected($event)"
+              interface="popover"
+              style="--min-width: 120px; font-size: 0.9rem"
+            >
+              <ion-select-option *ngFor="let rId of roomIds" [value]="rId">
+                {{ rId }}
+              </ion-select-option>
+            </ion-select>
+          </ion-item>
+        </ion-col>
+        <ion-col size="4">
+          <ion-button id="open-coords" expand="block" size="small">
+            Go to X/Y
+          </ion-button>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <!-- The full‐screen Leaflet container: -->
+  <!-- <div id="map" style="height: 100%; width: 100%;"></div> -->
+  <!-- <ion-item>
+    <ion-label>Pick a Room:</ion-label>
+    <ion-select [(ngModel)]="selectedRoom" (ionChange)="onRoomSelected($event)">
+      <ion-select-option *ngFor="let rId of roomIds" [value]="rId">
+        {{ rId }}
+      </ion-select-option>
+    </ion-select>
+  </ion-item> -->
+  <!-- Full-width buttons at top of content -->
+
+  <ion-fab slot="fixed" vertical="bottom" horizontal="end">
+    <ion-fab-button  [color]="isTracking ? 'primary' : 'danger'"  
+    (click)="toggleTracking()"
+    >
+      <ion-icon name="locate-outline"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+  <!-- Sheet modal for entering target X,Y -->
+  <ion-modal
+    #coordsModal
+    trigger="open-coords"
+    [backdropDismiss]="false"
+    [initialBreakpoint]="0.25"
+    [breakpoints]="[0, 0.25, 0.5, 0.75]"
+  >
+    <ng-template>
+      <ion-header>
+        <ion-toolbar>
+          <ion-title>Enter Target Coordinates</ion-title>
+          <ion-buttons slot="end">
+            <ion-button (click)="coordsModal.dismiss()">Close</ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+
+      <ion-content >
+        <form (ngSubmit)="goToCoords(); coordsModal.dismiss()" novalidate>
+          <ion-grid>
+            <ion-row>
+              <ion-col size="6">
+                <ion-item >
+                  <ion-label position="stacked">X (meters)</ion-label>
+                  <ion-input
+                    type="number"
+                    [(ngModel)]="targetX"
+                    name="targetX"
+                    required
+                  ></ion-input>
+                </ion-item>
+              </ion-col>
+              <ion-col size="6">
+                <ion-item >
+                  <ion-label position="stacked">Y (meters)</ion-label>
+                  <ion-input
+                    type="number"
+                    [(ngModel)]="targetY"
+                    name="targetY"
+                    required
+                  >
+                  </ion-input>
+                </ion-item>
+              </ion-col>
+            </ion-row>
+            <ion-row>
+              <ion-col size="6">
+                <ion-item>
+                  <ion-label position="stacked">Current Room:</ion-label>
+                  <span
+                    class="pad-item"
+                    *ngIf="currentRoom; else noRoom">
+                    {{ currentRoom }}
+                  </span>
+                  <ng-template #noRoom>-</ng-template>
+                </ion-item>
+              </ion-col>
+              <ion-col size="6">
+                <ion-item>
+                  <ion-label position="stacked">Current Coords:</ion-label>
+                  <span class="pad-item"
+                    *ngIf="currentX !== null && currentY !== null; else noCoords"
+                  >
+                    {{ currentX| number:'1.2-2' }}, {{ currentY |
+                    number:'1.2-2'}}
+                  </span>
+                  <ng-template #noCoords>-</ng-template>
+                </ion-item>
+              </ion-col>
+            </ion-row>
+          </ion-grid>
+
+          <ion-button
+            expand="block"
+            type="submit"
+            [disabled]="targetX === null || targetY === null"
+            class="ion-margin-top"
+          >
+            Go
+          </ion-button>
+        </form>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+
+  <!-- Leaflet map: fills remaining content area -->
+  <div id="map"></div>
+</ion-content>

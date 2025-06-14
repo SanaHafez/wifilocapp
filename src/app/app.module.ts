@@ -1,21 +1,61 @@
+// import { NgModule } from '@angular/core';
+// import { BrowserModule } from '@angular/platform-browser';
+// import { RouteReuseStrategy } from '@angular/router';
+
+// import { IonicModule, IonicRouteStrategy } from '@ionic/angular';
+
+// import { AppComponent } from './app.component';
+// import { AppRoutingModule } from './app-routing.module';
+
+// import { File } from '@awesome-cordova-plugins/file/ngx';
+// import { WifiWizard2 } from '@awesome-cordova-plugins/wifi-wizard-2/ngx';
+// import { Insomnia } from '@awesome-cordova-plugins/insomnia/ngx';
+// // import { AndroidPermissions } from '@ionic-native/android-permissions/ngx';
+// import { AndroidPermissions } from '@awesome-cordova-plugins/android-permissions/ngx';
+// // import { Permissions } from '@capacitor/permissions';
+
+
+// @NgModule({
+//   declarations: [AppComponent],
+//   imports: [BrowserModule, IonicModule.forRoot(), AppRoutingModule],
+//   providers: [{ provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
+//     WifiWizard2,File,Insomnia,],
+//   bootstrap: [AppComponent],
+// })
+// export class AppModule {}
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { RouteReuseStrategy } from '@angular/router';
 
 import { IonicModule, IonicRouteStrategy } from '@ionic/angular';
 
-import { AppComponent } from './app.component';
+import { AppComponent }   from './app.component';
 import { AppRoutingModule } from './app-routing.module';
 
-import { File } from '@awesome-cordova-plugins/file/ngx';
+// Cordova‑plugin wrappers (only those you actually use)
+import { File }      from '@awesome-cordova-plugins/file/ngx';
 import { WifiWizard2 } from '@awesome-cordova-plugins/wifi-wizard-2/ngx';
-import { Insomnia } from '@awesome-cordova-plugins/insomnia/ngx';
-
+import { Insomnia }  from '@awesome-cordova-plugins/insomnia/ngx';
+import { AndroidPermissions } from '@awesome-cordova-plugins/android-permissions/ngx';
+import { HttpClientModule } from '@angular/common/http';
+import { DeviceOrientation } from '@awesome-cordova-plugins/device-orientation/ngx';
 
 @NgModule({
   declarations: [AppComponent],
-  imports: [BrowserModule, IonicModule.forRoot(), AppRoutingModule],
-  providers: [{ provide: RouteReuseStrategy, useClass: IonicRouteStrategy },WifiWizard2,File,Insomnia],
+  imports: [
+    BrowserModule,
+    IonicModule.forRoot(),
+    AppRoutingModule,
+    HttpClientModule
+  ],
+  providers: [
+    { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
+    File,
+    WifiWizard2,
+    Insomnia,
+    AndroidPermissions,
+    DeviceOrientation
+  ],
   bootstrap: [AppComponent],
 })
 export class AppModule {}
