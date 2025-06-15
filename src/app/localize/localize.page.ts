@@ -23,6 +23,8 @@ import { astarGrid } from '../utils/astar';
 import { dijkstraGrid } from '../utils/dijkstraGrid';
 
 import { buildOccupancyGrid } from '../utils/occupancy';
+
+import { SimpleKalman2D, KalmanState } from '../utils/kalman'
 // import { DeviceOrientation, DeviceOrientationCompassHeading } from '@awesome-cordova-plugins/device-orientation/ngx';
 
 @Component({
@@ -33,6 +35,8 @@ import { buildOccupancyGrid } from '../utils/occupancy';
   imports: [IonicModule, CommonModule, FormsModule]
 })
 export class LocalizePage implements OnInit, AfterViewInit {
+  private kf!: SimpleKalman2D;
+  private kfState!: KalmanState;
   @ViewChild('coordsModal', { static: true }) coordsModal!: IonModal;
   /**— for the "Select a Room" dropdown: —**/
   public roomIds: string[] = [];         // e.g. ["U-1F-32", "U-1F-29", …]
@@ -86,6 +90,7 @@ export class LocalizePage implements OnInit, AfterViewInit {
     private wifiService: WifilocService,
     private zone: NgZone,
     private plt: Platform,
+    
     // private deviceOrientation: DeviceOrientation
   ) { }
 
@@ -95,6 +100,7 @@ export class LocalizePage implements OnInit, AfterViewInit {
 
 
   ngAfterViewInit() {
+    this.kf = new SimpleKalman2D(1, /*processStd=*/0.5, /*measStd=*/1);
     // 1) Preload the 600 dpi floor-plan PNG
     const img = new Image();
     img.src = 'assets/floormap/U1F_floorplan_with_2x2m_grid_600dpi2.png';
@@ -246,6 +252,7 @@ export class LocalizePage implements OnInit, AfterViewInit {
       }, 1000); // adjust the interval as you wish
     }
   }
+
   ngOnDestroy() {
     if (this.headingSubscription) {
       this.headingSubscription.unsubscribe();
@@ -266,6 +273,19 @@ export class LocalizePage implements OnInit, AfterViewInit {
       const res: LocalizationResult = await this.wifiService.scanAndLocalize();
       console.log('Meters =', res.x, ',', res.y);
 
+
+      if (!this.kfState) {
+      // first measurement → bootstrap
+      this.kfState = this.kf.init(res.x, res.y);
+    } else {
+      // predict → incorporate 
+      const pred = this.kf.predict(this.kfState);
+      this.kfState = this.kf.update(pred, res.x, res.y);
+    }
+
+    // use filtered positions:
+    const fx = this.kfState.x, fy = this.kfState.y;
+
       // STEP 2: Convert (meter → pixel) at 600 dpi:
       //   pixelX = x0_px + (res.x × pixPerM)
       //   pixelY = y0_px − (res.y × pixPerM)
@@ -275,7 +295,7 @@ export class LocalizePage implements OnInit, AfterViewInit {
       this.currentX = res.x;
       this.currentY = res.y;
 
-      console.log(`→ pixel coordinates = (${pxNatX.toFixed(1)}, ${pxNatY.toFixed(1)})`);
+      console.log(`pixel coordinates = (${pxNatX.toFixed(1)}, ${pxNatY.toFixed(1)})`);
 
       // STEP 3: “Unproject” pixel coords at zoom=0 → Leaflet latlng
       const latlng = this.map.unproject([pxNatX, pxNatY], 0);
