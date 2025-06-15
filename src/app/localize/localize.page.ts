@@ -65,6 +65,7 @@ export class LocalizePage implements OnInit, AfterViewInit {
   private readonly y1 = 2016;
   private readonly x2 = 1628;
   private readonly y2 = 2016;
+  // The “bottom‐left” and “top‐right” corners of the floor plan in pixels
   private readonly pixPerM = Math.hypot(this.x2 - this.x1, this.y2 - this.y1) / 2.95;
   // (you can also hardcode the final pixPerM value from Python, e.g. 100 px/m etc.)
   private gridStep = 0.5; // 1 m resolution
