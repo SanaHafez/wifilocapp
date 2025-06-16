@@ -31,7 +31,8 @@
           </ion-item>
         </ion-col>
         <ion-col size="4">
-          <ion-button id="open-coords" expand="block" size="small">
+          <ion-button id="open-coords" expand="block" 
+          size="small">
             Go to X/Y
           </ion-button>
         </ion-col>
@@ -41,6 +42,26 @@
 </ion-header>
 
 <ion-content>
+
+<ion-fab slot="fixed" vertical="bottom" horizontal="start">
+  <ion-fab-button>
+    <ion-icon name="layers-outline"></ion-icon>
+  </ion-fab-button>
+  <ion-fab-list side="top">
+    <!-- grid overlay -->
+    <ion-fab-button (click)="setOverlay('grid')">
+      <ion-icon name="grid-outline"></ion-icon>
+    </ion-fab-button>
+    <!-- plain floor-plan -->
+    <ion-fab-button (click)="setOverlay('plain')">
+      <ion-icon name="map-outline"></ion-icon>
+    </ion-fab-button>
+    <!-- satellite tiles -->
+    <!-- <ion-fab-button (click)="setOverlay('sat')">
+      <ion-icon name="globe-outline"></ion-icon>
+    </ion-fab-button> -->
+  </ion-fab-list>
+</ion-fab>
   <!-- The full‐screen Leaflet container: -->
   <!-- <div id="map" style="height: 100%; width: 100%;"></div> -->
   <!-- <ion-item>
@@ -65,7 +86,7 @@
     #coordsModal
     trigger="open-coords"
     [backdropDismiss]="false"
-    [initialBreakpoint]="0.25"
+    [initialBreakpoint]="0.75"
     [breakpoints]="[0, 0.25, 0.5, 0.75]"
   >
     <ng-template>

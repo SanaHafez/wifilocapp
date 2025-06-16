@@ -86,6 +86,9 @@ export class LocalizePage implements OnInit, AfterViewInit {
   currentY: number | undefined;
   isTracking = false;
   private trackingHandle: any;  // holds interval ID
+
+   private currentOverlay!: L.ImageOverlay | L.TileLayer;
+   private bounds!: L.LatLngBounds;
   constructor(
     private wifiService: WifilocService,
     private zone: NgZone,
@@ -103,7 +106,7 @@ export class LocalizePage implements OnInit, AfterViewInit {
     this.kf = new SimpleKalman2D(1, /*processStd=*/0.5, /*measStd=*/1);
     // 1) Preload the 600 dpi floor-plan PNG
     const img = new Image();
-    img.src = 'assets/floormap/U1F_floorplan_with_2x2m_grid_600dpi2.png';
+    img.src = 'assets/floormap/U1F_floorplan_600dpi2.png';
     img.onload = async () => {
       // only here is img.naturalWidth/naturalHeight available
       this.imageWidth = img.naturalWidth;
@@ -113,6 +116,7 @@ export class LocalizePage implements OnInit, AfterViewInit {
         'assets/floormap/U1F_floorplan_with_2x2m_grid_600dpi8.png',
         this.x0_px,
         this.y0_px,
+      
         this.xEnd_px,
         this.yEnd_px,
         this.pixPerM,
@@ -132,13 +136,12 @@ export class LocalizePage implements OnInit, AfterViewInit {
       // 3) Compute “bottom-left” & “top-right” in Leaflet coordinates at zoom=0
       const sw = this.map.unproject([0, this.imageHeight], 0);
       const ne = this.map.unproject([this.imageWidth, 0], 0);
-      const imageBounds = new L.LatLngBounds(sw, ne);
+       this.bounds = new L.LatLngBounds(sw, ne);
 
       // 4) Place the image overlay and clamp the map’s bounds
-      L.imageOverlay(
-        'assets/floormap/U1F_floorplan_with_2x2m_grid_600dpi2.png', imageBounds).addTo(this.map);
-      this.map.setMaxBounds(imageBounds);
-      this.map.fitBounds(imageBounds, { maxZoom: 3, animate: false });
+      this.currentOverlay = L.imageOverlay(img.src, this.bounds).addTo(this.map);
+      this.map.setMaxBounds(this.bounds);
+      this.map.fitBounds(this.bounds, { maxZoom: 3, animate: false });
 
       this.targetLayer = L.layerGroup().addTo(this.map);
       this.currentLayer = L.layerGroup().addTo(this.map);
@@ -573,5 +576,47 @@ export class LocalizePage implements OnInit, AfterViewInit {
     this.goToCoords();
   }
 
+
+
+
+
+ setOverlay(kind: 'grid' | 'plain' | 'sat') {
+    // remove old overlay
+    if (this.currentOverlay) {
+      this.map.removeLayer(this.currentOverlay);
+    }
+
+    switch(kind) {
+      case 'grid':
+        this.currentOverlay = L.imageOverlay(
+          'assets/floormap/U1F_floorplan_with_2x2m_grid_600dpi2.png',
+          this.bounds
+        );
+        break;
+
+      case 'sat':
+        this.currentOverlay = L.imageOverlay(
+          'assets/floormap/U1F_floorplan_with_2x2m_grid_600dpi3.png',
+          this.bounds
+        );
+        break;
+
+      case 'plain':
+                this.currentOverlay = L.imageOverlay(
+          'assets/floormap/U1F_floorplan_600dpi2.png',
+          this.bounds
+        );
+        // e.g. an OSM tile layer
+        // this.currentOverlay = L.tileLayer(
+        //   'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        //   { attribution: '&copy; OSM contributors' }
+        // );
+        break;
+    }
+
+    this.currentOverlay.addTo(this.map);
+    // make sure your map‐markers & route lines stay on top
+    this.currentOverlay.bringToBack();
+  }
 
 }

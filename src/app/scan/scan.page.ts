@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, AfterViewInit } from '@angular/core';
 import { Platform, AlertController } from '@ionic/angular';
 import { File } from '@awesome-cordova-plugins/file/ngx';
 import { Insomnia } from '@awesome-cordova-plugins/insomnia/ngx';
@@ -9,7 +9,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { AndroidPermissions } from '@awesome-cordova-plugins/android-permissions/ngx';
-
+import * as L from 'leaflet';
 
 declare var WifiWizard2: any;
 
@@ -20,7 +20,7 @@ declare var WifiWizard2: any;
   standalone: true,
   imports: [IonicModule, CommonModule, FormsModule]
 })
-export class ScanPage implements OnInit {
+export class ScanPage implements OnInit, AfterViewInit {
   isDeviceReady = false;
   roomName: string = 'U-1F-';
   x: number = 1;
@@ -34,6 +34,24 @@ export class ScanPage implements OnInit {
   shouldStop: boolean = false;
 
   // collectedData: any[] = [];
+  // your calibration constants
+  // Since the PNG is 600 DPI, scale each by 3:
+  private readonly x0_px = 872;   // left‐bottom pixel (x0)
+  private readonly y0_px = 2097   // left‐bottom pixel (y0)
+  private readonly xEnd_px = 3735;    // top‐end pixel (y_end)
+  private readonly yEnd_px = 167;    // top‐end pixel (y_end)
+  private readonly x1 = 1510;
+  private readonly y1 = 2016;
+  private readonly x2 = 1628;
+  private readonly y2 = 2016;
+  private readonly pixPerM = Math.hypot(this.x2 - this.x1, this.y2 - this.y1) / 2.95;
+
+   pickerMap?: L.Map ;
+   pickerMarker?: L.Marker;
+   lastCenter?: L.LatLng;
+   lastZoom?: number;
+
+  public mapPickerOpen = false;
 
 
   constructor(private platform: Platform,
@@ -45,6 +63,7 @@ export class ScanPage implements OnInit {
   async ngOnInit() {
     this.platform.ready().then(async () => {
       console.log('Platform ready');
+      this.lastZoom = 1;
       this.isDeviceReady = true;
       // Request location permission via the Geolocation plugin
       const perm = await Geolocation.requestPermissions();
@@ -55,19 +74,24 @@ export class ScanPage implements OnInit {
       }
 
       try {
-      await this.perms.requestPermissions([
-        this.perms.PERMISSION.READ_EXTERNAL_STORAGE,
-        this.perms.PERMISSION.WRITE_EXTERNAL_STORAGE
-      ]);
-    } catch {
-      console.warn('Permission request failed—might be on Android 11+');
-    }
+        await this.perms.requestPermissions([
+          this.perms.PERMISSION.READ_EXTERNAL_STORAGE,
+          this.perms.PERMISSION.WRITE_EXTERNAL_STORAGE
+        ]);
+      } catch {
+        console.warn('Permission request failed—might be on Android 11+');
+      }
 
 
       WifiWizard2.startScan();
 
     });
+
+
   }
+
+
+
   async scan() {
     this.shouldStop = false;
     if (!this.isDeviceReady) {
@@ -285,4 +309,136 @@ export class ScanPage implements OnInit {
       });
   }
 
+
+
+
+  openMapPicker() {
+    this.mapPickerOpen = true;
+  }
+
+  closeMapPicker() {
+    if (this.pickerMap) {
+      this.lastCenter = this.pickerMap.getCenter();
+      this.lastZoom   = this.pickerMap.getZoom();
+    }
+    this.mapPickerOpen = false;
+  }
+
+  initMapPicker() {
+    const img = new Image();
+    img.src = 'assets/floormap/U1F_floorplan_with_2x2m_grid_600dpi2.png';
+    if (this.pickerMap) {
+      // restore last view if we have one
+      if (this.lastCenter && this.lastZoom != null) {
+        this.pickerMap.setView(this.lastCenter, this.lastZoom);
+      }
+      return;
+    }
+
+
+    // initialize a small CRS.Simple Leaflet map
+    this.pickerMap = L.map('mapPicker', {
+      crs: L.CRS.Simple,
+      zoomSnap: 0.5,
+      minZoom: -3,
+      maxZoom: 4,
+      zoom: 1.5,
+      attributionControl: false
+    });
+
+    // compute bounds from your image size:
+    img.onload = () => {
+      const imgW = img.naturalWidth,
+        imgH = img.naturalHeight;
+      if (!this.pickerMap) {
+        return;
+      }
+      const sw = this.pickerMap.unproject([0, imgH], 0);
+      const ne = this.pickerMap.unproject([imgW, 0], 0);
+
+      const bounds = new L.LatLngBounds(sw, ne);
+
+      L.imageOverlay(img.src, bounds).addTo(this.pickerMap!);
+      this.pickerMap.setMaxBounds(bounds);
+      // this.pickerMap.fitBounds(bounds);
+
+      // listen for clicks
+      this.pickerMap.on('click', e => this.onMapPick(e));
+    }
+  }
+
+  private onMapPick(e: L.LeafletMouseEvent) {
+    // remove old marker
+    if (this.pickerMarker && this.pickerMap) {
+      this.pickerMap.removeLayer(this.pickerMarker);
+    }
+
+    // show a little marker
+    const pinIcon = L.icon({
+      iconUrl: 'assets/icon/marker-icon.png',
+      shadowUrl: 'assets/icon/marker-shadow.png',     // optional but gives you the classic drop‐shadow
+      iconSize: [25, 41],  // size of the icon
+      iconAnchor: [12, 41],  // point of the icon which will correspond to marker’s location
+      popupAnchor: [1, -34],  // point from which popups will "open", relative to the iconAnchor
+      shadowSize: [41, 41]   // same for the shadow image
+    });
+
+    // this.pickerMarker = L.marker(e.latlng).addTo(this.pickerMap);
+    this.pickerMarker = L.marker(e.latlng, 
+      { icon: pinIcon }).addTo(this.pickerMap!);
+
+    // convert back to your 600dpi‐pixel coords at zoom=0:
+    if (!this.pickerMap) {
+      return;
+    }
+    const px = this.pickerMap.project(e.latlng, 0);
+    // then to meters:
+    const xm = (px.x - this.x0_px) / this.pixPerM;
+    const ym = (this.y0_px - px.y) / this.pixPerM;
+
+    // round and assign
+    this.x = parseFloat(xm.toFixed(2));
+    this.y = parseFloat(ym.toFixed(2));
+
+    // close the modal if you like:
+    // this.closeMapPicker();
+  }
+
+  ngAfterViewInit() {
+    const img = new Image();
+    img.src = 'assets/floormap/U1F_floorplan_with_2x2m_grid_600dpi2.png';
+   // initialize a small CRS.Simple Leaflet map
+    this.pickerMap = L.map('mapPicker', {
+      crs: L.CRS.Simple,
+      zoomSnap: 0.5,
+      minZoom: -3,
+      maxZoom: 4,
+      zoom: 1.5,
+      attributionControl: false
+    });
+     img.onload = () => {
+      const imgW = img.naturalWidth,
+        imgH = img.naturalHeight;
+      if (!this.pickerMap) {
+        return;
+      }
+      const sw = this.pickerMap.unproject([0, imgH], 0);
+      const ne = this.pickerMap.unproject([imgW, 0], 0);
+
+      const bounds = new L.LatLngBounds(sw, ne);
+
+      L.imageOverlay(img.src, bounds).addTo(this.pickerMap!);
+      this.pickerMap.setMaxBounds(bounds);
+      // this.pickerMap.fitBounds(bounds);
+        // compute the geographic center of your floor-plan
+  const center = bounds.getCenter();
+
+  // now set the view to that center, at zoom level 3 (or whatever you like)
+  this.pickerMap!.setView(center, -2);
+
+      // listen for clicks
+      this.pickerMap.on('click', e => this.onMapPick(e));
+    }
+
+  }
 }
