@@ -88,7 +88,11 @@ export class LocalizePage implements OnInit, AfterViewInit {
   private trackingHandle: any;  // holds interval ID
 
    private currentOverlay!: L.ImageOverlay | L.TileLayer;
+   private currentMarker!:  L.Marker
    private bounds!: L.LatLngBounds;
+   private predictHandle?: any;
+
+
   constructor(
     private wifiService: WifilocService,
     private zone: NgZone,
@@ -152,7 +156,13 @@ export class LocalizePage implements OnInit, AfterViewInit {
 
       // ***NOW draw the occupancy grid overlay:***
       this.drawOccupancyOverlay();
-      this.locate();
+      // this.locate();
+       this.predictHandle = setInterval(() => {
+      if (!this.kfState) return;
+      // ❱ Always run the predict step
+      this.kfState = this.kf.predict(this.kfState);
+      this.drawFilteredPosition();
+    }, 100);
       // // 5) Create a layer group for your “current position” red dot
 
       // // 1) After your map has been initialized and the floor plan overlay has been added,
@@ -246,13 +256,15 @@ export class LocalizePage implements OnInit, AfterViewInit {
       // stop
       clearInterval(this.trackingHandle);
       this.isTracking = false;
+       this.currentLayer.clearLayers();
     } else {
       // start
       this.isTracking = true;
       this.locate(); // do one immediately
+      // this.drawFilteredPosition();
       this.trackingHandle = setInterval(() => {
-        this.locate();
-      }, 1000); // adjust the interval as you wish
+        this.locate()
+      }, 500); // adjust the interval as you wish
     }
   }
 
@@ -263,6 +275,7 @@ export class LocalizePage implements OnInit, AfterViewInit {
     if (this.trackingHandle) {
       clearInterval(this.trackingHandle);
     }
+     clearInterval(this.predictHandle);
   }
 
   /**
@@ -275,6 +288,7 @@ export class LocalizePage implements OnInit, AfterViewInit {
       // STEP 1: Ask your service for (room, x, y) in METERS
       const res: LocalizationResult = await this.wifiService.scanAndLocalize();
       console.log('Meters =', res.x, ',', res.y);
+      console.log('Room =', res.room);
 
 
       if (!this.kfState) {
@@ -292,18 +306,19 @@ export class LocalizePage implements OnInit, AfterViewInit {
       // STEP 2: Convert (meter → pixel) at 600 dpi:
       //   pixelX = x0_px + (res.x × pixPerM)
       //   pixelY = y0_px − (res.y × pixPerM)
-      const pxNatX = this.x0_px + res.x * this.pixPerM;
-      const pxNatY = this.y0_px - res.y * this.pixPerM;
+      const pxNatX = this.x0_px + fx * this.pixPerM;
+      const pxNatY = this.y0_px - fy * this.pixPerM;
       this.currentRoom = res.room;
-      this.currentX = res.x;
-      this.currentY = res.y;
+      this.currentX = fx;
+      this.currentY = fy;
 
       console.log(`pixel coordinates = (${pxNatX.toFixed(1)}, ${pxNatY.toFixed(1)})`);
 
       // STEP 3: “Unproject” pixel coords at zoom=0 → Leaflet latlng
-      const latlng = this.map.unproject([pxNatX, pxNatY], 0);
+      // const latlng = this.map.unproject([pxNatX, pxNatY], 0);
 
-      this.currentLatlng = latlng;
+      // this.currentLatlng = latlng;
+      this.currentLatlng= this.map.unproject([pxNatX, pxNatY], 0);
       // Compute which grid‐cell row/column corresponds to (res.x, res.y):
       const r = Math.round(res.y / this.gridStep);
       const c = Math.round(res.x / this.gridStep);
@@ -315,9 +330,9 @@ export class LocalizePage implements OnInit, AfterViewInit {
         console.log('Calling drawRoute() because targetLatlng is set');
         this.drawRoute();
       } else {
-        console.log('Not drawing route because targetLatlng is still null');
+        // console.log('Not drawing route because targetLatlng is still null');
       }
-
+if(this.isTracking){
       // STEP 4: Draw a red dot there
       this.currentLayer.clearLayers();
       const dotIcon = L.divIcon({
@@ -325,11 +340,14 @@ export class LocalizePage implements OnInit, AfterViewInit {
         iconSize: [12, 12],
         iconAnchor: [6, 6]
       });
-      L.marker(latlng, { icon: dotIcon }).addTo(this.currentLayer);
+
+      this.currentMarker=L.marker(this.currentLatlng, 
+        { icon: dotIcon }).addTo(this.currentLayer);
 
       // STEP 5: Pan so that your dot is centered (keep current zoom)
       const z = this.map.getZoom();
-      this.map.flyTo(latlng, z, { animate: true, duration: 0.8 });
+      this.map.panTo(this.currentLatlng,{ animate: true, duration: 0.8 })
+      }
     }
     catch (err: any) {
       console.error('Localization error:', err);
@@ -380,7 +398,7 @@ export class LocalizePage implements OnInit, AfterViewInit {
     // Convert (targetX, targetY) meters → native pixels
     const pxX = this.x0_px + this.targetX * this.pixPerM;
     const pxY = this.y0_px - this.targetY * this.pixPerM;
-    console.log(`→ Target pixel: (${pxX.toFixed(1)}, ${pxY.toFixed(1)})`);
+    console.log(`Target pixel: (${pxX.toFixed(1)}, ${pxY.toFixed(1)})`);
 
     // Unproject → Leaflet LatLng
     const latlng = this.map.unproject([pxX, pxY], 0);
@@ -409,12 +427,13 @@ export class LocalizePage implements OnInit, AfterViewInit {
       console.log('Calling drawRoute() because currentLatlng is set');
       this.drawRoute();
     } else {
-      console.log('Not drawing route because currentLatlng is still null');
+      // console.log('Not drawing route because currentLatlng is still null');
     }
 
     // Optionally pan half‐way toward the target so user sees it
     const currentZoom = this.map.getZoom();
-    this.map.flyTo(latlng, currentZoom, { animate: true, duration: 0.8 });
+    // this.map.flyTo(latlng, currentZoom, { animate: true, duration: 0.8 });
+    this.map.panTo(latlng, { animate: true, duration: 0.8 });
 
     // Reset modal form fields
     this.targetX = null;
@@ -461,7 +480,7 @@ export class LocalizePage implements OnInit, AfterViewInit {
       return this.map.unproject([pxX, pxY], 0);
     });
 
-    // Draw a blue polyline
+    // Draw a path polyline
     this.routeLayer.setLatLngs(latlngs);
     this.routeLayer.setStyle({
       color: '#8D11CE',
@@ -617,6 +636,30 @@ export class LocalizePage implements OnInit, AfterViewInit {
     this.currentOverlay.addTo(this.map);
     // make sure your map‐markers & route lines stay on top
     this.currentOverlay.bringToBack();
+  }
+
+
+  private drawFilteredPosition() {
+    if (!this.kfState) return;
+    const fx = this.kfState.x;
+    const fy = this.kfState.y;
+
+    // convert filtered meters → pixels
+    const px = this.x0_px + fx * this.pixPerM;
+    const py = this.y0_px - fy * this.pixPerM;
+    const latlng = this.map.unproject([px, py], 0);
+
+    // instead of clearing & redrawing, just move the existing marker
+    if (!this.currentMarker) {
+      this.currentMarker = L.marker(latlng, {
+        icon: L.divIcon({ className: 'leaflet-marker-dot', iconSize:[12,12], iconAnchor:[6,6] })
+      }).addTo(this.map);
+    } else {
+      this.currentMarker.setLatLng(latlng);
+    }
+
+    // keep the map centered (optional)
+    this.map.panTo(latlng, { animate: true, duration: 0.8 });
   }
 
 }
