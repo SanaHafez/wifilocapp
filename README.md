@@ -57,7 +57,7 @@ An end-to-end Ionic/Capacitor app for indoor positioning and path-planning using
 ```txt
 
 #Mobile App Setup
-git clone https://github.com/SanaHafezg/wifilocapp.git
+git clone https://github.com/SanaHafez/wifilocapp.git
 cd wifilocapp
 
 # 1. Install node dependencies
