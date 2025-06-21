@@ -23,7 +23,9 @@ import { astarGrid } from '../utils/astar';
 import { dijkstraGrid } from '../utils/dijkstraGrid';
 
 import { buildOccupancyGrid } from '../utils/occupancy';
-import { DeviceOrientation, DeviceOrientationCompassHeading } from '@awesome-cordova-plugins/device-orientation/ngx';
+
+import { SimpleKalman2D, KalmanState } from '../utils/kalman'
+// import { DeviceOrientation, DeviceOrientationCompassHeading } from '@awesome-cordova-plugins/device-orientation/ngx';
 
 @Component({
   selector: 'app-localize',
@@ -33,6 +35,8 @@ import { DeviceOrientation, DeviceOrientationCompassHeading } from '@awesome-cor
   imports: [IonicModule, CommonModule, FormsModule]
 })
 export class LocalizePage implements OnInit, AfterViewInit {
+  private kf!: SimpleKalman2D;
+  private kfState!: KalmanState;
   @ViewChild('coordsModal', { static: true }) coordsModal!: IonModal;
   /**— for the "Select a Room" dropdown: —**/
   public roomIds: string[] = [];         // e.g. ["U-1F-32", "U-1F-29", …]
@@ -82,11 +86,19 @@ export class LocalizePage implements OnInit, AfterViewInit {
   currentY: number | undefined;
   isTracking = false;
   private trackingHandle: any;  // holds interval ID
+
+   private currentOverlay!: L.ImageOverlay | L.TileLayer;
+   private currentMarker!:  L.Marker
+   private bounds!: L.LatLngBounds;
+   private predictHandle?: any;
+
+
   constructor(
     private wifiService: WifilocService,
     private zone: NgZone,
     private plt: Platform,
-    private deviceOrientation: DeviceOrientation
+    
+    // private deviceOrientation: DeviceOrientation
   ) { }
 
   ngOnInit() {
@@ -95,9 +107,10 @@ export class LocalizePage implements OnInit, AfterViewInit {
 
 
   ngAfterViewInit() {
+    this.kf = new SimpleKalman2D(1, /*processStd=*/0.5, /*measStd=*/1);
     // 1) Preload the 600 dpi floor-plan PNG
     const img = new Image();
-    img.src = 'assets/floormap/U1F_floorplan_with_2x2m_grid_600dpi2.png';
+    img.src = 'assets/floormap/U1F_floorplan_600dpi2.png';
     img.onload = async () => {
       // only here is img.naturalWidth/naturalHeight available
       this.imageWidth = img.naturalWidth;
@@ -107,6 +120,7 @@ export class LocalizePage implements OnInit, AfterViewInit {
         'assets/floormap/U1F_floorplan_with_2x2m_grid_600dpi8.png',
         this.x0_px,
         this.y0_px,
+      
         this.xEnd_px,
         this.yEnd_px,
         this.pixPerM,
@@ -126,13 +140,12 @@ export class LocalizePage implements OnInit, AfterViewInit {
       // 3) Compute “bottom-left” & “top-right” in Leaflet coordinates at zoom=0
       const sw = this.map.unproject([0, this.imageHeight], 0);
       const ne = this.map.unproject([this.imageWidth, 0], 0);
-      const imageBounds = new L.LatLngBounds(sw, ne);
+       this.bounds = new L.LatLngBounds(sw, ne);
 
       // 4) Place the image overlay and clamp the map’s bounds
-      L.imageOverlay(
-        'assets/floormap/U1F_floorplan_with_2x2m_grid_600dpi2.png', imageBounds).addTo(this.map);
-      this.map.setMaxBounds(imageBounds);
-      this.map.fitBounds(imageBounds, { maxZoom: 3, animate: false });
+      this.currentOverlay = L.imageOverlay(img.src, this.bounds).addTo(this.map);
+      this.map.setMaxBounds(this.bounds);
+      this.map.fitBounds(this.bounds, { maxZoom: 3, animate: false });
 
       this.targetLayer = L.layerGroup().addTo(this.map);
       this.currentLayer = L.layerGroup().addTo(this.map);
@@ -143,7 +156,13 @@ export class LocalizePage implements OnInit, AfterViewInit {
 
       // ***NOW draw the occupancy grid overlay:***
       this.drawOccupancyOverlay();
-      this.locate();
+      // this.locate();
+       this.predictHandle = setInterval(() => {
+      if (!this.kfState) return;
+      // ❱ Always run the predict step
+      this.kfState = this.kf.predict(this.kfState);
+      this.drawFilteredPosition();
+    }, 100);
       // // 5) Create a layer group for your “current position” red dot
 
       // // 1) After your map has been initialized and the floor plan overlay has been added,
@@ -237,15 +256,18 @@ export class LocalizePage implements OnInit, AfterViewInit {
       // stop
       clearInterval(this.trackingHandle);
       this.isTracking = false;
+       this.currentLayer.clearLayers();
     } else {
       // start
       this.isTracking = true;
       this.locate(); // do one immediately
+      // this.drawFilteredPosition();
       this.trackingHandle = setInterval(() => {
-        this.locate();
-      }, 2000); // adjust the interval as you wish
+        this.locate()
+      }, 500); // adjust the interval as you wish
     }
   }
+
   ngOnDestroy() {
     if (this.headingSubscription) {
       this.headingSubscription.unsubscribe();
@@ -253,6 +275,7 @@ export class LocalizePage implements OnInit, AfterViewInit {
     if (this.trackingHandle) {
       clearInterval(this.trackingHandle);
     }
+     clearInterval(this.predictHandle);
   }
 
   /**
@@ -265,22 +288,37 @@ export class LocalizePage implements OnInit, AfterViewInit {
       // STEP 1: Ask your service for (room, x, y) in METERS
       const res: LocalizationResult = await this.wifiService.scanAndLocalize();
       console.log('Meters =', res.x, ',', res.y);
+      console.log('Room =', res.room);
+
+
+      if (!this.kfState) {
+      // first measurement → bootstrap
+      this.kfState = this.kf.init(res.x, res.y);
+    } else {
+      // predict → incorporate 
+      const pred = this.kf.predict(this.kfState);
+      this.kfState = this.kf.update(pred, res.x, res.y);
+    }
+
+    // use filtered positions:
+    const fx = this.kfState.x, fy = this.kfState.y;
 
       // STEP 2: Convert (meter → pixel) at 600 dpi:
       //   pixelX = x0_px + (res.x × pixPerM)
       //   pixelY = y0_px − (res.y × pixPerM)
-      const pxNatX = this.x0_px + res.x * this.pixPerM;
-      const pxNatY = this.y0_px - res.y * this.pixPerM;
+      const pxNatX = this.x0_px + fx * this.pixPerM;
+      const pxNatY = this.y0_px - fy * this.pixPerM;
       this.currentRoom = res.room;
-      this.currentX = res.x;
-      this.currentY = res.y;
+      this.currentX = fx;
+      this.currentY = fy;
 
-      console.log(`→ pixel coordinates = (${pxNatX.toFixed(1)}, ${pxNatY.toFixed(1)})`);
+      console.log(`pixel coordinates = (${pxNatX.toFixed(1)}, ${pxNatY.toFixed(1)})`);
 
       // STEP 3: “Unproject” pixel coords at zoom=0 → Leaflet latlng
-      const latlng = this.map.unproject([pxNatX, pxNatY], 0);
+      // const latlng = this.map.unproject([pxNatX, pxNatY], 0);
 
-      this.currentLatlng = latlng;
+      // this.currentLatlng = latlng;
+      this.currentLatlng= this.map.unproject([pxNatX, pxNatY], 0);
       // Compute which grid‐cell row/column corresponds to (res.x, res.y):
       const r = Math.round(res.y / this.gridStep);
       const c = Math.round(res.x / this.gridStep);
@@ -292,9 +330,9 @@ export class LocalizePage implements OnInit, AfterViewInit {
         console.log('Calling drawRoute() because targetLatlng is set');
         this.drawRoute();
       } else {
-        console.log('Not drawing route because targetLatlng is still null');
+        // console.log('Not drawing route because targetLatlng is still null');
       }
-
+if(this.isTracking){
       // STEP 4: Draw a red dot there
       this.currentLayer.clearLayers();
       const dotIcon = L.divIcon({
@@ -302,11 +340,14 @@ export class LocalizePage implements OnInit, AfterViewInit {
         iconSize: [12, 12],
         iconAnchor: [6, 6]
       });
-      L.marker(latlng, { icon: dotIcon }).addTo(this.currentLayer);
+
+      this.currentMarker=L.marker(this.currentLatlng, 
+        { icon: dotIcon }).addTo(this.currentLayer);
 
       // STEP 5: Pan so that your dot is centered (keep current zoom)
       const z = this.map.getZoom();
-      this.map.flyTo(latlng, z, { animate: true, duration: 0.8 });
+      this.map.panTo(this.currentLatlng,{ animate: true, duration: 0.8 })
+      }
     }
     catch (err: any) {
       console.error('Localization error:', err);
@@ -357,7 +398,7 @@ export class LocalizePage implements OnInit, AfterViewInit {
     // Convert (targetX, targetY) meters → native pixels
     const pxX = this.x0_px + this.targetX * this.pixPerM;
     const pxY = this.y0_px - this.targetY * this.pixPerM;
-    console.log(`→ Target pixel: (${pxX.toFixed(1)}, ${pxY.toFixed(1)})`);
+    console.log(`Target pixel: (${pxX.toFixed(1)}, ${pxY.toFixed(1)})`);
 
     // Unproject → Leaflet LatLng
     const latlng = this.map.unproject([pxX, pxY], 0);
@@ -386,12 +427,13 @@ export class LocalizePage implements OnInit, AfterViewInit {
       console.log('Calling drawRoute() because currentLatlng is set');
       this.drawRoute();
     } else {
-      console.log('Not drawing route because currentLatlng is still null');
+      // console.log('Not drawing route because currentLatlng is still null');
     }
 
     // Optionally pan half‐way toward the target so user sees it
     const currentZoom = this.map.getZoom();
-    this.map.flyTo(latlng, currentZoom, { animate: true, duration: 0.8 });
+    // this.map.flyTo(latlng, currentZoom, { animate: true, duration: 0.8 });
+    this.map.panTo(latlng, { animate: true, duration: 0.8 });
 
     // Reset modal form fields
     this.targetX = null;
@@ -438,7 +480,7 @@ export class LocalizePage implements OnInit, AfterViewInit {
       return this.map.unproject([pxX, pxY], 0);
     });
 
-    // Draw a blue polyline
+    // Draw a path polyline
     this.routeLayer.setLatLngs(latlngs);
     this.routeLayer.setStyle({
       color: '#8D11CE',
@@ -553,5 +595,71 @@ export class LocalizePage implements OnInit, AfterViewInit {
     this.goToCoords();
   }
 
+
+
+
+
+ setOverlay(kind: 'grid' | 'plain' | 'sat') {
+    // remove old overlay
+    if (this.currentOverlay) {
+      this.map.removeLayer(this.currentOverlay);
+    }
+
+    switch(kind) {
+      case 'grid':
+        this.currentOverlay = L.imageOverlay(
+          'assets/floormap/U1F_floorplan_with_2x2m_grid_600dpi2.png',
+          this.bounds
+        );
+        break;
+
+      case 'sat':
+        this.currentOverlay = L.imageOverlay(
+          'assets/floormap/U1F_floorplan_with_2x2m_grid_600dpi3.png',
+          this.bounds
+        );
+        break;
+
+      case 'plain':
+                this.currentOverlay = L.imageOverlay(
+          'assets/floormap/U1F_floorplan_600dpi2.png',
+          this.bounds
+        );
+        // e.g. an OSM tile layer
+        // this.currentOverlay = L.tileLayer(
+        //   'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        //   { attribution: '&copy; OSM contributors' }
+        // );
+        break;
+    }
+
+    this.currentOverlay.addTo(this.map);
+    // make sure your map‐markers & route lines stay on top
+    this.currentOverlay.bringToBack();
+  }
+
+
+  private drawFilteredPosition() {
+    if (!this.kfState) return;
+    const fx = this.kfState.x;
+    const fy = this.kfState.y;
+
+    // convert filtered meters → pixels
+    const px = this.x0_px + fx * this.pixPerM;
+    const py = this.y0_px - fy * this.pixPerM;
+    const latlng = this.map.unproject([px, py], 0);
+
+    // instead of clearing & redrawing, just move the existing marker
+    if (!this.currentMarker) {
+      this.currentMarker = L.marker(latlng, {
+        icon: L.divIcon({ className: 'leaflet-marker-dot', iconSize:[12,12], iconAnchor:[6,6] })
+      }).addTo(this.map);
+    } else {
+      this.currentMarker.setLatLng(latlng);
+    }
+
+    // keep the map centered (optional)
+    this.map.panTo(latlng, { animate: true, duration: 0.8 });
+  }
 
 }

@@ -8,13 +8,13 @@
   </ion-toolbar>
 
   <!-- Second toolbar: room picker + X/Y button -->
-  <ion-toolbar mode="ios" class="toolbar‐small">
+  <ion-toolbar class="toolbar-small">
     <ion-grid class="ion-no-padding">
       <ion-row class="ion-align-items-center">
-        <ion-col size="8">
+        <ion-col size="7.5">
           <ion-item lines="none" class="ion-no-padding">
             <ion-label
-              style="white-space: nowrap; font-size: 0.9rem; margin-right: 4px"
+              style="white-space: nowrap; font-size: 0.9rem; margin-right: 4px; padding:0px"
             >
               Go to Room:
             </ion-label>
@@ -30,10 +30,36 @@
             </ion-select>
           </ion-item>
         </ion-col>
-        <ion-col size="4">
+        <ion-col size="4"  style="margin-left: 5px;">
           <ion-button id="open-coords" expand="block" size="small">
             Go to X/Y
           </ion-button>
+        </ion-col>
+      </ion-row>
+      <ion-row>
+        <ion-col size="5.5">
+          <ion-item lines="none" class="ion-no-padding">
+            <ion-label
+           
+            >Current Room:</ion-label>
+            <span *ngIf="currentRoom; else noRoom">
+              {{ currentRoom }}
+            </span>
+            <ng-template #noRoom>-</ng-template>
+          </ion-item>
+        </ion-col>
+        <ion-col size="6"  style="margin-left: 2%;">
+          <ion-item lines="none" class="ion-no-padding">
+            <ion-label 
+            >Current Coords:</ion-label>
+            <span
+            
+              *ngIf="currentX && currentY; else noCoords"
+            >
+              {{ currentX| number:'1.2-2' }}, {{ currentY | number:'1.2-2'}}
+            </span>
+            <ng-template #noCoords>-</ng-template>
+          </ion-item>
         </ion-col>
       </ion-row>
     </ion-grid>
@@ -41,6 +67,25 @@
 </ion-header>
 
 <ion-content>
+  <ion-fab slot="fixed" vertical="bottom" horizontal="start">
+    <ion-fab-button>
+      <ion-icon name="layers-outline"></ion-icon>
+    </ion-fab-button>
+    <ion-fab-list side="top">
+      <!-- grid overlay -->
+      <ion-fab-button (click)="setOverlay('grid')">
+        <ion-icon name="grid-outline"></ion-icon>
+      </ion-fab-button>
+      <!-- plain floor-plan -->
+      <ion-fab-button (click)="setOverlay('plain')">
+        <ion-icon name="map-outline"></ion-icon>
+      </ion-fab-button>
+      <!-- satellite tiles -->
+      <!-- <ion-fab-button (click)="setOverlay('sat')">
+      <ion-icon name="globe-outline"></ion-icon>
+    </ion-fab-button> -->
+    </ion-fab-list>
+  </ion-fab>
   <!-- The full‐screen Leaflet container: -->
   <!-- <div id="map" style="height: 100%; width: 100%;"></div> -->
   <!-- <ion-item>
@@ -54,8 +99,9 @@
   <!-- Full-width buttons at top of content -->
 
   <ion-fab slot="fixed" vertical="bottom" horizontal="end">
-    <ion-fab-button  [color]="isTracking ? 'primary' : 'danger'"  
-    (click)="toggleTracking()"
+    <ion-fab-button
+      [color]="isTracking ? 'primary' : 'danger'"
+      (click)="toggleTracking()"
     >
       <ion-icon name="locate-outline"></ion-icon>
     </ion-fab-button>
@@ -65,7 +111,7 @@
     #coordsModal
     trigger="open-coords"
     [backdropDismiss]="false"
-    [initialBreakpoint]="0.25"
+    [initialBreakpoint]="0.75"
     [breakpoints]="[0, 0.25, 0.5, 0.75]"
   >
     <ng-template>
@@ -78,12 +124,12 @@
         </ion-toolbar>
       </ion-header>
 
-      <ion-content >
+      <ion-content>
         <form (ngSubmit)="goToCoords(); coordsModal.dismiss()" novalidate>
           <ion-grid>
             <ion-row>
               <ion-col size="6">
-                <ion-item >
+                <ion-item>
                   <ion-label position="stacked">X (meters)</ion-label>
                   <ion-input
                     type="number"
@@ -94,7 +140,7 @@
                 </ion-item>
               </ion-col>
               <ion-col size="6">
-                <ion-item >
+                <ion-item>
                   <ion-label position="stacked">Y (meters)</ion-label>
                   <ion-input
                     type="number"
@@ -110,9 +156,7 @@
               <ion-col size="6">
                 <ion-item>
                   <ion-label position="stacked">Current Room:</ion-label>
-                  <span
-                    class="pad-item"
-                    *ngIf="currentRoom; else noRoom">
+                  <span class="pad-item" *ngIf="currentRoom; else noRoom">
                     {{ currentRoom }}
                   </span>
                   <ng-template #noRoom>-</ng-template>
@@ -121,7 +165,8 @@
               <ion-col size="6">
                 <ion-item>
                   <ion-label position="stacked">Current Coords:</ion-label>
-                  <span class="pad-item"
+                  <span
+                    class="pad-item"
                     *ngIf="currentX !== null && currentY !== null; else noCoords"
                   >
                     {{ currentX| number:'1.2-2' }}, {{ currentY |
