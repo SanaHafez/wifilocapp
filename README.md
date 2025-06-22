@@ -71,3 +71,8 @@ npx cap sync
 
 # Or run all in one line:
 npm install && npm run build && npx cap sync
+
+# Enable developer options and turn off WiFi Throttling
+
+# Run App
+ionic cap run android
