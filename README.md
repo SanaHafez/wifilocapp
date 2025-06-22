@@ -50,7 +50,7 @@ An end-to-end Ionic/Capacitor app for indoor positioning and path-planning using
 # PREREQUISITES
  - Node.js ≥20 & npm
  - Ionic CLI 7.2 & Capacitor
- - Android SDK
+ - Android SDK API 31
  - Python 3.9 + pip: functions-framework, google-cloud-storage, scikit-learn, pandas
    
 # GETTING STARTED   
